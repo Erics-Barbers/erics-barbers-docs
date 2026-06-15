@@ -130,3 +130,19 @@ Negative consequences:
 - make logout reliably invalidate backend sessions
 - add tests for token rotation, reuse, expiry, and logout
 
+## Status Update - 2026-06-12
+
+Implemented since this ADR:
+
+- refresh tokens are hashed in session rows and compared with bcrypt
+- refresh tokens are rotated and both new tokens are returned to the Next.js BFF
+- the Next.js proxy and profile BFF route can refresh expired access tokens
+- email verification and password reset now use dedicated JWT `tokenType` values
+- focused frontend tests cover proxy refresh behavior and auth route-handler cookie behavior
+- API logout is idempotent for missing, malformed, wrong-type, expired, or already-revoked refresh tokens
+- refresh-token rotation deletes the old session and creates the new session in one database transaction
+
+Remaining follow-up work:
+
+- decide whether to add session-family replay detection
+- add expired session cleanup

@@ -108,7 +108,11 @@ Negative consequences:
 ## Current Follow-Up Work
 
 - keep controllers thin
-- make DTO validation consistent across all modules
 - implement missing role guard behavior
 - avoid creating unnecessary layers for very small features
 
+## Status Update - 2026-06-13
+
+The API now uses a strict global `ValidationPipe` with DTO whitelisting, unknown-property rejection, transformation, and sanitized validation errors.
+
+This means DTOs are treated as the public request contract. New request fields should be added with explicit validation decorators, otherwise they will be rejected by the global pipe.

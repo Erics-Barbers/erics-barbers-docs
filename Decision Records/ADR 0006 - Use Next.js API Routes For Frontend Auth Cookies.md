@@ -96,11 +96,11 @@ Positive consequences:
 - protected frontend pages can be checked before rendering
 - frontend auth behavior is easier to centralize in route handlers
 
-Negative consequences:
+Negative consequences at the time of decision:
 
-- not all auth flows currently use the same route-handler pattern
+- not all auth flows used the same route-handler pattern
 - logout needs careful cookie forwarding
-- refresh-token flow is not fully wired yet
+- refresh-token flow was not fully wired yet
 - local development can be awkward with `secure: true` cookies
 
 ## Current Follow-Up Work
@@ -110,3 +110,20 @@ Negative consequences:
 - make logout clear both frontend and backend auth state reliably
 - document cookie behavior for local and production environments
 
+## Status Update - 2026-06-12
+
+Implemented since this ADR:
+
+- browser-facing auth flows now go through Next.js BFF route handlers
+- registration, login, resend verification, email verification, profile, and logout use local `/api/auth/*` routes
+- the BFF sets both `accessToken` and `refreshToken` cookies on the UI domain
+- logout always clears local auth cookies, even if the backend logout call fails
+- the account page redirects to the homepage after a logout click
+- the NestJS logout endpoint is idempotent for missing, malformed, wrong-type, expired, or already-revoked refresh tokens
+- the proxy protects current and anticipated private route prefixes
+- focused Jest tests cover proxy and auth route-handler behavior
+
+Remaining follow-up work:
+
+- build the password reset UI/BFF flow
+- keep generated auth client usage out of browser auth flows

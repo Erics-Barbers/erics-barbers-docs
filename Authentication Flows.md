@@ -23,18 +23,15 @@ Authentication is split across three layers:
 flowchart LR
     Browser["Browser / User"] --> NextUI["Next.js App"]
     NextUI --> NextRoutes["Next.js API Routes"]
-    NextUI --> GeneratedClient["Generated OpenAPI Client"]
     NextRoutes --> NestAPI["NestJS Auth API"]
-    GeneratedClient --> NestAPI
     NestAPI --> Prisma["Prisma"]
     Prisma --> Postgres["PostgreSQL"]
     NestAPI --> Resend["Resend Email"]
 ```
 
-The project currently uses two different frontend request styles:
+Browser-facing auth requests should go through the Next.js BFF route handlers under `/api/auth/*`.
 
-- some requests go through Next.js API routes, such as login, profile, and logout
-- some requests go directly to the NestJS API through the generated OpenAPI client, such as register, verify email, and resend verification email
+The generated OpenAPI client can still be useful for non-auth backend resources, but browser auth flows should not call NestJS auth endpoints directly. Next.js needs to own the browser-facing HttpOnly cookies, refresh retries, local logout behavior, and same-origin checks.
 
 This split matters because cookies behave differently depending on whether the browser is talking to the Next.js app or directly to the backend API.
 
@@ -46,18 +43,18 @@ The backend auth module is wired in:
 
 The main backend pieces are:
 
-| File | Responsibility |
-| --- | --- |
-| `presentation/controllers/auth.controller.ts` | Defines the `/auth/*` HTTP endpoints. |
-| `application/use-cases/register.use-case.ts` | Handles new user registration. |
-| `application/use-cases/login.use-case.ts` | Validates login credentials and creates sessions. |
-| `application/use-cases/verify-email.use-case.ts` | Verifies email tokens and activates users. |
-| `application/use-cases/refresh-token.use-case.ts` | Rotates refresh tokens. |
-| `application/use-cases/logout.use-case.ts` | Invalidates refresh-token sessions. |
-| `infrastructure/prisma/auth.prisma-repository.ts` | Reads and writes users and sessions with Prisma. |
-| `infrastructure/services/jwt.service.ts` | Signs, verifies, and decodes JWTs. |
-| `infrastructure/services/bcrypt.service.ts` | Hashes passwords and compares hashed values. |
-| `common/guards/auth.guard.ts` | Protects routes using Bearer access tokens. |
+| File                                              | Responsibility                                    |
+| ------------------------------------------------- | ------------------------------------------------- |
+| `presentation/controllers/auth.controller.ts`     | Defines the `/auth/*` HTTP endpoints.             |
+| `application/use-cases/register.use-case.ts`      | Handles new user registration.                    |
+| `application/use-cases/login.use-case.ts`         | Validates login credentials and creates sessions. |
+| `application/use-cases/verify-email.use-case.ts`  | Verifies email tokens and activates users.        |
+| `application/use-cases/refresh-token.use-case.ts` | Rotates refresh tokens.                           |
+| `application/use-cases/logout.use-case.ts`        | Invalidates refresh-token sessions.               |
+| `infrastructure/prisma/auth.prisma-repository.ts` | Reads and writes users and sessions with Prisma.  |
+| `infrastructure/services/jwt.service.ts`          | Signs, verifies, and decodes JWTs.                |
+| `infrastructure/services/bcrypt.service.ts`       | Hashes passwords and compares hashed values.      |
+| `common/guards/auth.guard.ts`                     | Protects routes using Bearer access tokens.       |
 
 ## Main Frontend Auth Components
 
@@ -67,32 +64,34 @@ The Next.js app is in:
 
 The main frontend pieces are:
 
-| File | Responsibility |
-| --- | --- |
-| `app/register/page.tsx` | Registration page. Calls `AuthRepository.registerUser`. |
-| `app/register/form.tsx` | Registration form UI. |
-| `app/verify-email/page.tsx` | Tells the user to check their email and allows resend. |
-| `app/email-verify/page.tsx` | Reads the verification token from the URL and verifies the email. |
-| `app/login/page.tsx` | Login page. Calls the local Next.js login route. |
-| `app/login/form.tsx` | Login form UI. |
-| `app/my-account/page.tsx` | Protected account page and logout action. |
-| `app/api/auth/login/route.ts` | Next.js route that forwards login to NestJS and stores the access token cookie. |
-| `app/api/auth/profile/route.ts` | Reads the access token cookie and forwards it to NestJS as a Bearer token. |
-| `app/api/auth/logout/route.ts` | Calls NestJS logout and clears the frontend access token cookie. |
-| `proxy.ts` | Protects `/my-account` by checking the access token cookie before rendering. |
-| `api/repositories/auth-repository.ts` | Wrapper around generated OpenAPI auth methods. |
-| `api/generated/services/AuthService.ts` | Generated client for backend auth endpoints. |
+| File                                            | Responsibility                                                                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `app/register/page.tsx`                         | Registration page. Calls the local Next.js register route.                                   |
+| `app/register/form.tsx`                         | Registration form UI.                                                                        |
+| `app/verify-email/page.tsx`                     | Tells the user to check their email and calls the local resend verification route.           |
+| `app/email-verify/page.tsx`                     | Reads the verification token from the URL and calls the local verify email route.            |
+| `app/login/page.tsx`                            | Login page. Calls the local Next.js login route.                                             |
+| `app/login/form.tsx`                            | Login form UI.                                                                               |
+| `app/my-account/page.tsx`                       | Protected account page for viewing profile data, editing display name, and logging out.       |
+| `app/api/auth/login/route.ts`                   | Forwards login to NestJS and stores access and refresh cookies on the UI domain.             |
+| `app/api/auth/register/route.ts`                | Forwards registration to NestJS through the BFF boundary.                                    |
+| `app/api/auth/send-verification-email/route.ts` | Forwards resend verification requests to NestJS.                                             |
+| `app/api/auth/verify-email/route.ts`            | Verifies email through NestJS and stores access and refresh cookies on the UI domain.        |
+| `app/api/auth/profile/route.ts`                 | Reads the access cookie, refreshes on auth failure, and forwards profile read/update requests to NestJS. |
+| `app/api/auth/logout/route.ts`                  | Best-effort API logout and always clears frontend auth cookies.                              |
+| `proxy.ts`                                      | Protects private UI route prefixes and refreshes access tokens when possible.                |
 
 ## Database Tables Used By Authentication
 
 Authentication mainly uses these tables:
 
-| Table | Purpose |
-| --- | --- |
-| `User` | Stores account identity, email, password hash, role, and email verification status. |
-| `Session` | Stores refresh-token sessions for login, refresh, and logout. |
-| `Mfa` | Future MFA support. |
-| `ExternalAccount` | Future external/social login support. |
+| Table             | Purpose                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `User`            | Stores account identity, email, password hash, role, and email verification status. |
+| `Session`         | Stores refresh-token sessions for login, refresh, and logout.                       |
+| `Mfa`             | Legacy/future TOTP-style MFA setup data.                                            |
+| `MfaChallenge`    | Short-lived email MFA challenges used during login.                                 |
+| `ExternalAccount` | Future external/social login support.                                               |
 
 ```mermaid
 erDiagram
@@ -124,12 +123,14 @@ erDiagram
 
 ## Token Model
 
-The backend creates two token types:
+The backend creates purpose-specific JWTs:
 
-| Token | Lifetime | Where it is used |
-| --- | --- | --- |
-| Access token | 15 minutes | Used to call protected API endpoints with `Authorization: Bearer <token>`. |
-| Refresh token | 7 days | Used to create a new access token without logging in again. |
+| Token                    | Lifetime   | Where it is used                                                                 |
+| ------------------------ | ---------- | -------------------------------------------------------------------------------- |
+| Access token             | 15 minutes | Used to call protected API endpoints with `Authorization: Bearer <token>`.       |
+| Refresh token            | 7 days     | Used to rotate a session and create a new access token without logging in again. |
+| Email verification token | 24 hours   | Used only by email verification links.                                           |
+| Password reset token     | 30 minutes | Used only by password reset links.                                               |
 
 The access token payload includes:
 
@@ -146,6 +147,15 @@ The refresh token payload includes:
 - `iat`: issued-at timestamp
 - `exp`: expiry timestamp
 
+Email verification and password reset tokens include:
+
+- `email`: user email
+- `tokenType`: `emailVerification` or `passwordReset`
+- `iat`: issued-at timestamp
+- `exp`: expiry timestamp
+
+This prevents a normal access or refresh token from being reused as an email verification or password reset token.
+
 The backend signs and verifies these tokens in:
 
 `erics-barber-api/src/modules/auth/infrastructure/services/jwt.service.ts`
@@ -158,8 +168,7 @@ Frontend files:
 
 - `app/register/page.tsx`
 - `app/register/form.tsx`
-- `api/repositories/auth-repository.ts`
-- `api/generated/services/AuthService.ts`
+- `app/api/auth/register/route.ts`
 
 Backend files:
 
@@ -174,7 +183,7 @@ Backend files:
 sequenceDiagram
     actor User
     participant RegisterPage as Next.js Register Page
-    participant AuthRepository as AuthRepository
+    participant NextRegister as Next.js /api/auth/register
     participant NestAuth as NestJS /auth/register
     participant RegisterUseCase as RegisterUseCase
     participant Bcrypt as BcryptService
@@ -182,14 +191,15 @@ sequenceDiagram
     participant Email as Resend
 
     User->>RegisterPage: enters email and password
-    RegisterPage->>AuthRepository: registerUser(email, password)
-    AuthRepository->>NestAuth: POST /auth/register
+    RegisterPage->>NextRegister: POST /api/auth/register
+    NextRegister->>NestAuth: POST /auth/register
     NestAuth->>RegisterUseCase: execute(dto)
     RegisterUseCase->>DB: check if email already exists
     RegisterUseCase->>Bcrypt: hash password
     RegisterUseCase->>DB: create User
     RegisterUseCase->>Email: send verification email
-    NestAuth-->>RegisterPage: registration success message
+    NestAuth-->>NextRegister: registration success message
+    NextRegister-->>RegisterPage: registration success message
     RegisterPage->>RegisterPage: store email in localStorage
     RegisterPage->>User: redirect to /verify-email
 ```
@@ -197,9 +207,9 @@ sequenceDiagram
 Step-by-step:
 
 1. The user enters their email and password in `RegisterForm`.
-2. `app/register/page.tsx` calls `AuthRepository.registerUser`.
-3. `AuthRepository` calls the generated OpenAPI method `authControllerRegister`.
-4. The NestJS API receives `POST /auth/register`.
+2. `app/register/page.tsx` calls `POST /api/auth/register`.
+3. The Next.js route forwards the request to `POST /auth/register`.
+4. The NestJS API receives the registration request.
 5. `RegisterUseCase` checks whether the email already exists.
 6. The password is hashed with bcrypt.
 7. A new `User` row is created in PostgreSQL.
@@ -213,7 +223,22 @@ The user is created before email verification, but `isEmailVerified` remains fal
 
 Trade-off:
 
-This is a common approach, but it means the database may contain unverified users. A production system may eventually need cleanup logic for accounts that never verify their email.
+This is a common approach, but it means the database may contain abandoned unverified users.
+
+Current cleanup policy:
+
+- unverified `CUSTOMER` accounts are removed by a scheduled backend job
+- the job runs daily at 2am server time
+- the default retention window is 7 days
+- the window can be configured with `UNVERIFIED_USER_TTL_DAYS`
+- admin/barber accounts are not targeted by this cleanup
+
+Auth maintenance cleanup policy:
+
+- expired refresh-token sessions are removed by a scheduled backend job
+- expired MFA challenges are removed by the same job
+- the job runs daily at 3am server time
+- `Session.expiresAt` and `MfaChallenge.expiresAt` are indexed for cleanup
 
 ## Email Verification Flow
 
@@ -233,7 +258,7 @@ Frontend files:
 
 - `app/verify-email/page.tsx`
 - `app/email-verify/page.tsx`
-- `api/repositories/auth-repository.ts`
+- `app/api/auth/verify-email/route.ts`
 
 Backend files:
 
@@ -246,7 +271,7 @@ Backend files:
 sequenceDiagram
     actor User
     participant EmailPage as Next.js /email-verify
-    participant AuthRepository as AuthRepository
+    participant NextVerify as Next.js /api/auth/verify-email
     participant NestAuth as NestJS /auth/verify-email
     participant VerifyUseCase as VerifyEmailUseCase
     participant DB as PostgreSQL
@@ -254,32 +279,30 @@ sequenceDiagram
 
     User->>EmailPage: opens email verification link
     EmailPage->>EmailPage: reads token from query string
-    EmailPage->>AuthRepository: verifyEmail(token)
-    AuthRepository->>NestAuth: POST /auth/verify-email
+    EmailPage->>NextVerify: POST /api/auth/verify-email
+    NextVerify->>NestAuth: POST /auth/verify-email
     NestAuth->>VerifyUseCase: execute(token, userAgent)
     VerifyUseCase->>TokenService: verify token
     VerifyUseCase->>DB: find user by email
     VerifyUseCase->>DB: set isEmailVerified = true
     VerifyUseCase->>TokenService: issue access and refresh tokens
     VerifyUseCase->>DB: create Session with hashed refresh token
-    NestAuth-->>EmailPage: access token and success message
+    NestAuth-->>NextVerify: access token, refresh token, and success message
+    NextVerify->>NextVerify: set HttpOnly accessToken and refreshToken cookies
+    NextVerify-->>EmailPage: success message
 ```
 
 Step-by-step:
 
 1. The user clicks the verification link from their email.
 2. `app/email-verify/page.tsx` reads the `token` query parameter.
-3. The page calls `AuthRepository.verifyEmail(token)`.
+3. The page calls `POST /api/auth/verify-email`.
 4. The NestJS backend verifies the token.
 5. The backend finds the user by email.
 6. The backend updates `User.isEmailVerified` to `true`.
 7. The backend issues an access token and refresh token.
 8. The refresh token is hashed and stored in the `Session` table.
-9. The backend sets a `refreshToken` cookie and returns the access token.
-
-Current implementation note:
-
-The email verification page calls the backend directly through the generated OpenAPI client. The backend returns an access token, but the current frontend page does not store that access token in the same `accessToken` cookie used by the login flow. That means email verification succeeds, but the user may still need to log in afterwards for the Next.js protected routes to recognize them.
+9. The Next.js route stores both tokens as HttpOnly cookies on the UI domain.
 
 ## Resend Verification Email Flow
 
@@ -289,31 +312,30 @@ The `/verify-email` page allows the user to request another verification email.
 sequenceDiagram
     actor User
     participant VerifyPage as Next.js /verify-email
-    participant AuthRepository as AuthRepository
+    participant NextResend as Next.js /api/auth/send-verification-email
     participant NestAuth as NestJS /auth/send-verification-email
     participant UseCase as SendVerificationEmailUseCase
     participant Email as Resend
 
     User->>VerifyPage: clicks resend verification email
     VerifyPage->>VerifyPage: reads email from localStorage
-    VerifyPage->>AuthRepository: resendVerificationEmail(email)
-    AuthRepository->>NestAuth: POST /auth/send-verification-email
+    VerifyPage->>NextResend: POST /api/auth/send-verification-email
+    NextResend->>NestAuth: POST /auth/send-verification-email
     NestAuth->>UseCase: execute(email)
     UseCase->>Email: send verification email
-    NestAuth-->>VerifyPage: success message
+    NestAuth-->>NextResend: success message
+    NextResend-->>VerifyPage: success message
 ```
 
 The resend page uses a 60-second timer to reduce repeated resend attempts from the UI.
 
 ## Login Flow
 
-Login uses a different frontend path from registration.
-
-Instead of calling the generated OpenAPI client directly, the login page calls a local Next.js API route:
+Login follows the same BFF pattern as registration and email verification. The browser calls a local Next.js API route, and that route calls the NestJS API:
 
 `app/api/auth/login/route.ts`
 
-This allows the Next.js app to store an `accessToken` cookie on the frontend domain.
+This allows the Next.js app to store `accessToken` and `refreshToken` cookies on the frontend domain.
 
 ```mermaid
 sequenceDiagram
@@ -333,10 +355,22 @@ sequenceDiagram
     LoginUseCase->>DB: find user by email
     LoginUseCase->>Bcrypt: compare password with passwordHash
     LoginUseCase->>LoginUseCase: check isEmailVerified
-    LoginUseCase->>TokenService: issue access and refresh tokens
-    LoginUseCase->>DB: create Session with hashed refresh token
-    NestAuth-->>NextLogin: access token and Set-Cookie refreshToken
-    NextLogin->>NextLogin: set HttpOnly accessToken cookie
+    alt MFA enabled
+        LoginUseCase->>DB: create MfaChallenge with hashed code
+        LoginUseCase-->>NestAuth: MFA_REQUIRED and challengeId
+        NestAuth-->>NextLogin: MFA_REQUIRED and challengeId
+        NextLogin-->>LoginPage: MFA_REQUIRED
+        LoginPage->>NextLogin: POST /api/auth/verify-mfa
+        NextLogin->>NestAuth: POST /auth/verify-mfa
+        NestAuth->>DB: verify and consume MfaChallenge
+        NestAuth->>TokenService: issue access and refresh tokens
+        NestAuth->>DB: create Session with hashed refresh token
+    else MFA disabled
+        LoginUseCase->>TokenService: issue access and refresh tokens
+        LoginUseCase->>DB: create Session with hashed refresh token
+    end
+    NestAuth-->>NextLogin: access token and refresh token
+    NextLogin->>NextLogin: set HttpOnly accessToken and refreshToken cookies
     NextLogin-->>LoginPage: login success
     LoginPage->>User: redirect to /my-account
 ```
@@ -347,32 +381,43 @@ Step-by-step:
 2. `app/login/page.tsx` sends `POST /api/auth/login` to the local Next.js app.
 3. The Next.js route forwards the credentials to the NestJS API at `/auth/login`.
 4. `LoginUseCase` validates the email and password.
-5. The backend rejects the login if the email is not verified.
-6. The backend issues an access token and refresh token.
-7. The refresh token is hashed and stored as a `Session` row.
-8. The NestJS API sets a `refreshToken` cookie.
-9. The Next.js API route stores the returned access token in an HttpOnly `accessToken` cookie on the UI domain.
-10. The browser is redirected to `/my-account`.
+5. If the email is not verified, the backend rejects the login with `Email not verified`.
+6. The Next.js login route normalizes that response to `code: EMAIL_NOT_VERIFIED`.
+7. The login page stores the submitted email in `localStorage` as `userEmail` and redirects the user to `/verify-email`.
+8. If the email is verified and MFA is disabled, the backend issues an access token and refresh token.
+9. The refresh token is hashed and stored as a `Session` row.
+10. The NestJS API returns the access token and refresh token to the Next.js route.
+11. The Next.js API route stores both tokens in HttpOnly cookies on the UI domain.
+12. The browser is redirected to `/my-account`.
 
-Cookie set by the Next.js login route:
+If MFA is enabled:
+
+1. Login returns `code: MFA_REQUIRED`, `challengeId`, and `mfaMethod`.
+2. No access token, refresh token, or session is created yet.
+3. The backend sends a short-lived email code and stores only the hashed code in `MfaChallenge`.
+4. The login page submits the code to `POST /api/auth/verify-mfa`.
+5. The Next.js route forwards the challenge id and code to `POST /auth/verify-mfa`.
+6. The backend verifies and consumes the challenge.
+7. Only after MFA succeeds does the backend issue access/refresh tokens and create a refresh session.
+8. The Next.js route sets both browser-facing auth cookies.
+
+MFA can be enabled or disabled for the current authenticated user through `PUT /auth/mfa-preference`. The only supported method today is `EMAIL`.
+
+Cookies set by the Next.js login route:
 
 ```text
 name: accessToken
 httpOnly: true
-secure: true
+secure: true in production
 sameSite: lax
 path: /
 maxAge: 15 minutes
-```
 
-Cookie set by the NestJS backend:
-
-```text
 name: refreshToken
 httpOnly: true
-secure: true
-sameSite: none
-path: /auth
+secure: true in production
+sameSite: lax
+path: /
 maxAge: 7 days
 ```
 
@@ -384,8 +429,8 @@ Trade-off:
 
 The app now has two authentication boundaries:
 
-- the backend API owns real authentication and sessions
-- the Next.js app owns a frontend-domain `accessToken` cookie for protected UI routes
+- the backend API owns real authentication and refresh sessions
+- the Next.js app owns frontend-domain auth cookies for protected UI routes
 
 This makes token handling more secure, but also more complex because cookies must be forwarded, cleared, and refreshed deliberately.
 
@@ -442,15 +487,15 @@ sequenceDiagram
     participant UseCase as GetProfileUseCase
     participant DB as PostgreSQL
 
-    User->>Browser: requests profile data
-    Browser->>NextProfile: GET /api/auth/profile with accessToken cookie
+    User->>Browser: views or edits profile data
+    Browser->>NextProfile: GET or PUT /api/auth/profile with accessToken cookie
     NextProfile->>NextProfile: read accessToken cookie
-    NextProfile->>NestProfile: GET /auth/profile with Bearer token
+    NextProfile->>NestProfile: GET or PUT /auth/profile with Bearer token
     NestProfile->>Guard: verify Bearer access token
     Guard->>Guard: require tokenType = access
     Guard->>NestProfile: attach user payload to request
-    NestProfile->>UseCase: get profile for CurrentUser
-    UseCase->>DB: read user profile
+    NestProfile->>UseCase: get or update profile for CurrentUser
+    UseCase->>DB: read or update user profile
     NestProfile-->>NextProfile: profile response
     NextProfile-->>Browser: profile response
 ```
@@ -463,6 +508,8 @@ On the backend:
 4. It requires `tokenType` to be `access`.
 5. It attaches the decoded payload to `request.user`.
 6. `@CurrentUser()` reads `request.user.sub` and passes the user id to the use case.
+
+The current account page allows the user to edit their display name. Email is shown read-only because changing the login email should be handled by a separate verification flow.
 
 ## Logout Flow
 
@@ -491,25 +538,25 @@ sequenceDiagram
     NestLogout-->>NextLogout: logout success and clear refresh cookie
     NextLogout->>NextLogout: clear accessToken cookie
     NextLogout-->>AccountPage: logout response
-    AccountPage->>User: redirect to /login
+    AccountPage->>User: redirect to homepage
 ```
 
 Intended behavior:
 
 1. The user clicks logout.
 2. The frontend calls the local Next.js logout route.
-3. The Next.js route calls the NestJS `/auth/logout` endpoint.
+3. The Next.js route forwards the UI-domain `refreshToken` cookie to the NestJS `/auth/logout` endpoint when it is available.
 4. The backend reads the refresh token cookie.
-5. The backend invalidates the matching session in PostgreSQL.
+5. If the refresh token is present and valid, the backend invalidates the matching session in PostgreSQL.
 6. The backend clears the refresh token cookie.
-7. The Next.js route clears the frontend `accessToken` cookie.
-8. The user is redirected to `/login`.
+7. The Next.js route clears the frontend `accessToken` and `refreshToken` cookies.
+8. The user is redirected to the homepage.
 
 Current implementation note:
 
-The Next.js logout route calls the backend without explicitly forwarding the backend `refreshToken` cookie. If the backend refresh cookie is not available on that request, the backend may not be able to invalidate the stored session. The frontend still clears the `accessToken` cookie.
+The NestJS logout endpoint is idempotent. Missing, malformed, wrong-type, expired, or already-revoked refresh tokens still produce a successful logout response after the API clears its refresh cookie.
 
-Also, the logout route currently returns the message `Logged in`, which should probably become `Logged out`.
+The Next.js logout route also treats backend logout as best-effort. Even if the backend call fails, the UI still clears both local auth cookies and returns `Logged out`. The account page redirects to the homepage after a logout click.
 
 ## Refresh Token Flow
 
@@ -535,25 +582,35 @@ sequenceDiagram
 
     Client->>NestRefresh: POST /auth/refresh with refreshToken cookie
     NestRefresh->>RefreshUseCase: execute(dto, oldRefreshToken)
-    RefreshUseCase->>DB: find matching session
+    RefreshUseCase->>DB: find matching unexpired session history
     RefreshUseCase->>TokenService: issue new access and refresh tokens
-    RefreshUseCase->>DB: invalidate old session
-    RefreshUseCase->>DB: create new session
-    NestRefresh-->>Client: new access token and new refresh cookie
+    RefreshUseCase->>DB: transaction marks old session rotated and creates replacement
+    NestRefresh-->>Client: new access token and rotated refresh token
 ```
 
 Intended behavior:
 
 1. The client sends the refresh token cookie to the backend.
-2. The backend checks that the refresh token maps to a valid session.
-3. The backend invalidates the old refresh token.
-4. The backend creates a new access token and refresh token.
-5. The backend stores the new refresh-token session.
-6. The backend sends the new access token back to the client and updates the refresh cookie.
+2. The backend checks that the refresh token maps to an unexpired stored session hash.
+3. The backend creates a new access token and refresh token.
+4. The backend hashes the new refresh token.
+5. In one database transaction, the backend marks the old session as `ROTATED`, creates the new refresh-token session in the same `familyId`, and stores the replacement session id.
+6. The backend sends the new access token and rotated refresh token back to the Next.js BFF.
+7. The Next.js BFF updates both browser-facing cookies.
 
 Current implementation note:
 
-The backend has a refresh use case, but the Next.js frontend does not appear to have a completed local refresh route yet. At the moment, protected frontend routing mainly relies on the 15-minute `accessToken` cookie.
+Refresh is wired into `proxy.ts` for protected page navigation and into `app/api/auth/profile/route.ts` for profile requests. If refresh fails, the BFF clears local auth cookies and redirects or returns `401`.
+
+The session swap is atomic at the database level. If the new session cannot be created, the old session is not marked as rotated and the API does not return the new tokens.
+
+Replay behavior:
+
+- each login creates a session family
+- each refresh keeps the replacement session in the same family
+- rotated session rows remain in the database until they expire
+- if an old rotated refresh token is submitted again, the API treats it as replay
+- replay detection revokes active sessions in that session family and returns unauthorized
 
 ## Password Reset Flow
 
@@ -629,15 +686,12 @@ The guard requires:
 
 These are useful notes for future development:
 
-- The frontend has mixed auth request paths: generated OpenAPI client for some flows, Next.js API routes for others.
-- Email verification returns an access token, but the current frontend does not store it in the `accessToken` cookie.
-- The Next.js logout route should forward the backend refresh cookie if the backend is expected to invalidate the session.
-- The Next.js logout route currently returns `Logged in` instead of `Logged out`.
-- The refresh endpoint exists in the backend, but the frontend does not yet have a complete refresh-token flow.
-- The generated OpenAPI client has `WITH_CREDENTIALS` set to `false`, so direct browser calls may not include or receive cookies as intended.
-- Cookies use `secure: true`, which means they require HTTPS. This is good for production, but local development may need special handling.
-- Role metadata exists through `@Roles(...)`, but role enforcement depends on a roles guard being implemented and applied.
-- Refresh-token lookup and invalidation should be reviewed carefully because bcrypt hashes are salted. Re-hashing the same token will not produce the same stored value.
+- Refresh token replay detection revokes the active sessions in a session family when an already-rotated refresh token is reused.
+- Password reset has backend token semantics, but the user-facing UI/BFF reset flow still needs to be built out.
+- Expired sessions and MFA challenges are proactively cleaned up by a daily scheduled backend job.
+- Role enforcement exists for booking endpoints, but unfinished modules such as barber/admin still need authorization wiring as they are built.
+- Generated OpenAPI auth methods remain available in generated code; auth browser flows should continue to use the Next.js BFF route handlers instead.
+- External provider login is feature-flagged but not implemented.
 
 ## Mental Model
 
@@ -652,4 +706,3 @@ The easiest way to understand the current authentication system is:
 7. The Next.js proxy uses the access token cookie to protect frontend pages.
 8. The backend uses `AuthGuard` to protect API routes.
 9. Logout should clear the frontend access token and invalidate the backend refresh-token session.
-

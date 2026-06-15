@@ -36,17 +36,25 @@ Implemented:
 - refresh-token creation
 - session row creation in PostgreSQL
 - protected backend profile endpoint
-- frontend `/my-account` route protection
-- logout flow foundation
+- frontend protected route proxy for account, booking, admin/barber-style private prefixes
+- logout flow through the Next.js BFF
+- refresh-token rotation
+- BFF refresh handling in the proxy and profile route
+- dedicated JWT token types for access, refresh, email verification, and password reset
+- auth-specific rate limits
+- focused tests for Next.js auth route handlers and proxy behavior
+- scheduled cleanup for stale unverified customer accounts
+- idempotent API logout and account-page redirect to the homepage
+- transactional refresh-token session rotation
+- email-code MFA challenge flow integrated into login
+- scheduled cleanup for expired refresh-token sessions and MFA challenges
+- refresh-token replay detection with session-family revocation
 
 Known gaps:
 
-- frontend refresh-token flow is not complete
-- email verification does not store the returned access token in the frontend `accessToken` cookie
-- logout route does not clearly forward the backend refresh cookie
-- logout route returns `Logged in` instead of `Logged out`
-- refresh-token hashing and lookup should be reviewed
-- role enforcement is not complete
+- password reset UI/BFF flow still needs to be built
+- external provider login is feature-flagged but not implemented
+- role enforcement is complete only where guards have been wired; unfinished modules still need authorization work as they are built
 
 ## Database
 
@@ -56,7 +64,7 @@ Implemented:
 - session table
 - barber table
 - booking table
-- MFA table foundation
+- MFA user flags and challenge table
 - external account table foundation
 - Prisma migrations
 - generated Prisma client
@@ -77,9 +85,10 @@ Implemented:
 - navigation and footer
 - register page
 - login page
+- login MFA code step
 - verify email page
 - email verification callback page
-- my account placeholder
+- my account page with profile read/update and logout
 - services page
 - booking page placeholder and feature flag
 
@@ -89,7 +98,7 @@ Known gaps:
 - no booking management UI
 - no barber dashboard
 - no admin dashboard
-- no profile editing UI
+- no verified email-change flow from the account page
 - services are static and not connected to the backend
 - user feedback and validation states are inconsistent across pages
 
@@ -102,7 +111,7 @@ Implemented:
 - CORS configuration
 - helmet middleware
 - cookie parser
-- global validation pipe
+- strict global validation pipe with DTO whitelisting and transformation
 - auth module
 - booking module foundation
 - barbers module foundation
@@ -112,11 +121,9 @@ Implemented:
 
 Known gaps:
 
-- role guard is empty
 - booking authorization is not complete
-- barber controller request binding needs review
 - booking service uses generic `Error` instead of Nest exceptions
-- DTO validation is inconsistent outside auth
+- future request DTOs must keep validation decorators complete
 - payments module is placeholder-level
 - notifications module is placeholder-level
 
@@ -130,13 +137,8 @@ Make the existing authentication flow reliable before building more features on 
 
 Tasks:
 
-- fix logout response message
-- make logout reliably invalidate backend sessions
-- implement or simplify refresh-token flow
-- review refresh-token hashing strategy
-- make email verification route store auth state consistently or redirect to login intentionally
-- add tests for login, logout, verification, refresh, and profile
-- ensure local development cookie behavior is documented and working
+- build password reset UI/BFF flow
+- keep auth documentation updated as flows change
 
 Why this comes first:
 
@@ -246,37 +248,35 @@ Tasks:
 
 ## Feature Status Table
 
-| Feature | Status | Notes |
-| --- | --- | --- |
-| Registration | Implemented | Needs stronger test coverage. |
-| Email verification | Implemented | Auth state after verification needs review. |
-| Login | Implemented | Uses Next.js API route and backend auth endpoint. |
-| Logout | Partial | Needs cookie forwarding/session invalidation review. |
-| Refresh token | Backend partial | Frontend route/flow not complete. |
-| Profile | Partial | Backend read/update exists, frontend page is minimal. |
-| Booking creation | Partial | Backend foundation exists, frontend placeholder. |
-| Booking management | Not implemented | Needs customer-facing and barber/admin-facing flows. |
-| Barber management | Partial | Backend foundation exists, frontend missing. |
-| Role enforcement | Partial | Decorators exist, guard not implemented. |
-| Services | Partial | Static frontend table, schema enum not connected to booking. |
-| Payments | Placeholder | Module exists but not implemented. |
-| Notifications | Placeholder | Module exists but not implemented. |
-| Health checks | Implemented | Database and Resend health checks exist. |
+| Feature            | Status          | Notes                                                                                          |
+| ------------------ | --------------- | ---------------------------------------------------------------------------------------------- |
+| Registration       | Implemented     | Needs stronger test coverage.                                                                  |
+| Email verification | Implemented     | Auth state after verification needs review.                                                    |
+| Login              | Implemented     | Uses Next.js API route and backend auth endpoint.                                              |
+| Logout             | Implemented     | Uses BFF route, clears local cookies, redirects to the homepage, and API logout is idempotent. |
+| Refresh token      | Implemented     | Backend rotation plus BFF refresh handling for protected navigation and profile.               |
+| Profile            | Partial         | Backend read/update exists, frontend page is minimal.                                          |
+| Booking creation   | Partial         | Backend foundation exists, frontend placeholder.                                               |
+| Booking management | Not implemented | Needs customer-facing and barber/admin-facing flows.                                           |
+| Barber management  | Partial         | Backend foundation exists, frontend missing.                                                   |
+| Role enforcement   | Partial         | Decorators exist, guard not implemented.                                                       |
+| Services           | Partial         | Static frontend table, schema enum not connected to booking.                                   |
+| Payments           | Placeholder     | Module exists but not implemented.                                                             |
+| Notifications      | Placeholder     | Module exists but not implemented.                                                             |
+| Health checks      | Implemented     | Database and Resend health checks exist.                                                       |
 
 ## Technical Debt
 
 ## Auth Technical Debt
 
-- mixed frontend auth request paths
-- refresh-token lookup and invalidation design needs review
-- no complete frontend refresh flow
-- logout route message is incorrect
+- mixed frontend auth request paths should be monitored as new auth UI is added
+- refresh-token replay detection does not revoke a session family yet
 - generated OpenAPI client has `WITH_CREDENTIALS` set to `false`
 
 ## API Technical Debt
 
-- role guard is empty
-- some DTOs do not have validation decorators
+- unfinished modules still need role guards wired as they are built
+- future request DTOs need explicit validation decorators for every accepted field
 - generic errors should be replaced with Nest exceptions
 - e2e tests are minimal
 - some tests appear to reference older DTO names or use case signatures
@@ -319,4 +319,3 @@ Keep the documentation honest:
 - decision records should explain why choices were made
 
 That will make the project easier for future developers to join without being misled by aspirational documentation.
-

@@ -16,12 +16,12 @@ Related notes:
 
 The project currently contains multiple app folders:
 
-| Folder | Purpose | Current status |
-| --- | --- | --- |
-| `erics-barbers-ui` | Main Next.js frontend | Active frontend |
-| `erics-barber-api` | NestJS backend API | Active backend |
-| `erics-barbers-ui-react` | Older Vite React app | Appears to be a starter or earlier experiment |
-| `Eric's Barbers` | Obsidian documentation vault | Active documentation |
+| Folder                   | Purpose                      | Current status                                |
+| ------------------------ | ---------------------------- | --------------------------------------------- |
+| `erics-barbers-ui`       | Main Next.js frontend        | Active frontend                               |
+| `erics-barber-api`       | NestJS backend API           | Active backend                                |
+| `erics-barbers-ui-react` | Older Vite React app         | Appears to be a starter or earlier experiment |
+| `Eric's Barbers`         | Obsidian documentation vault | Active documentation                          |
 
 The active application is the Next.js frontend plus the NestJS backend.
 
@@ -29,9 +29,7 @@ The active application is the Next.js frontend plus the NestJS backend.
 flowchart LR
     User["User Browser"] --> Next["Next.js Frontend"]
     Next --> NextRoutes["Next.js API Routes"]
-    Next --> GeneratedClient["Generated OpenAPI Client"]
     NextRoutes --> API["NestJS API"]
-    GeneratedClient --> API
     API --> Prisma["Prisma ORM"]
     Prisma --> DB["PostgreSQL"]
     API --> Resend["Resend Email"]
@@ -47,72 +45,60 @@ It is a Next.js app using the app directory.
 
 Main folders:
 
-| Path | Purpose |
-| --- | --- |
-| `app/` | Next.js routes, pages, layouts, and route handlers. |
-| `app/components/` | Shared UI components. |
-| `app/api/` | Next.js API routes used as a server-side boundary for selected auth flows. |
-| `api/repositories/` | Repository wrappers around generated API clients. |
-| `api/generated/` | Generated OpenAPI client code. |
-| `test/` | Frontend tests. |
+| Path              | Purpose                                                                     |
+| ----------------- | --------------------------------------------------------------------------- |
+| `app/`            | Next.js routes, pages, layouts, and route handlers.                         |
+| `app/components/` | Shared UI components.                                                       |
+| `app/api/`        | Next.js API routes used as the server-side boundary for browser auth flows. |
+| `api/generated/`  | Generated OpenAPI client code.                                              |
+| `test/`           | Frontend tests.                                                             |
 
 ## Frontend Routing
 
 Important routes:
 
-| Route | File | Status |
-| --- | --- | --- |
-| `/` | `app/page.tsx` | Implemented landing/home page. |
-| `/register` | `app/register/page.tsx` | Implemented. |
-| `/verify-email` | `app/verify-email/page.tsx` | Implemented. |
-| `/email-verify` | `app/email-verify/page.tsx` | Implemented. |
-| `/login` | `app/login/page.tsx` | Implemented. |
-| `/my-account` | `app/my-account/page.tsx` | Minimal protected page. |
-| `/services` | `app/services/page.tsx` | Static services table. |
-| `/bookings` | `app/bookings/page.tsx` | Feature-flagged placeholder. |
-| `/bookings/new-booking` | `app/bookings/new-booking/page.tsx` | Placeholder. |
-| `/bookings/manage-booking` | `app/bookings/manage-booking/page.tsx` | Placeholder. |
+| Route                      | File                                   | Status                         |
+| -------------------------- | -------------------------------------- | ------------------------------ |
+| `/`                        | `app/page.tsx`                         | Implemented landing/home page. |
+| `/register`                | `app/register/page.tsx`                | Implemented.                   |
+| `/verify-email`            | `app/verify-email/page.tsx`            | Implemented.                   |
+| `/email-verify`            | `app/email-verify/page.tsx`            | Implemented.                   |
+| `/login`                   | `app/login/page.tsx`                   | Implemented.                   |
+| `/my-account`              | `app/my-account/page.tsx`              | Protected account/profile page. |
+| `/services`                | `app/services/page.tsx`                | Static services table.         |
+| `/bookings`                | `app/bookings/page.tsx`                | Feature-flagged placeholder.   |
+| `/bookings/new-booking`    | `app/bookings/new-booking/page.tsx`    | Placeholder.                   |
+| `/bookings/manage-booking` | `app/bookings/manage-booking/page.tsx` | Placeholder.                   |
 
 ## Frontend API Strategy
 
-The frontend currently uses two API access patterns.
-
-Pattern 1: direct generated OpenAPI client.
+Browser-facing authentication uses Next.js API routes as a BFF boundary.
 
 Used by:
 
 - registration
+- login
 - email verification
 - resend verification email
-- reset password helper methods
-
-Files:
-
-- `api/repositories/auth-repository.ts`
-- `api/generated/services/AuthService.ts`
-- `api/generated/core/OpenAPI.ts`
-
-Pattern 2: Next.js API routes as a frontend auth boundary.
-
-Used by:
-
-- login
 - profile
 - logout
 
 Files:
 
+- `app/api/auth/register/route.ts`
 - `app/api/auth/login/route.ts`
+- `app/api/auth/verify-email/route.ts`
+- `app/api/auth/send-verification-email/route.ts`
 - `app/api/auth/profile/route.ts`
 - `app/api/auth/logout/route.ts`
 
 Reason for this pattern:
 
-Next.js route handlers can read and set HttpOnly cookies for the frontend domain. This is useful for storing the `accessToken` cookie without exposing it to client-side JavaScript.
+Next.js route handlers can read and set HttpOnly cookies for the frontend domain. This is useful for storing `accessToken` and `refreshToken` cookies without exposing them to client-side JavaScript.
 
 Trade-off:
 
-Using both patterns makes the system harder to reason about. Long term, the project should decide whether all auth flows go through Next.js API routes or whether direct generated-client calls are enough for non-cookie flows.
+The generated OpenAPI client remains available and can be useful for non-auth backend resources, but auth browser flows should continue to use the BFF routes because they involve cookie setting, refresh retry behavior, redirects, and local logout cleanup.
 
 ## Backend Architecture
 
@@ -124,17 +110,17 @@ It is a NestJS API organized by feature modules.
 
 Main folders:
 
-| Path | Purpose |
-| --- | --- |
-| `src/app.module.ts` | Root NestJS module. |
-| `src/main.ts` | Application bootstrap, Swagger, CORS, middleware, and server startup. |
-| `src/common/` | Shared guards, decorators, constants, and types. |
-| `src/config/` | Configuration module and service. |
-| `src/infrastructure/` | Shared infrastructure such as Prisma, mail, and payment services. |
-| `src/modules/` | Feature modules. |
-| `src/generated/prisma/` | Generated Prisma client and model types. |
-| `prisma/` | Prisma schema and migrations. |
-| `test/` | End-to-end tests. |
+| Path                    | Purpose                                                               |
+| ----------------------- | --------------------------------------------------------------------- |
+| `src/app.module.ts`     | Root NestJS module.                                                   |
+| `src/main.ts`           | Application bootstrap, Swagger, CORS, middleware, and server startup. |
+| `src/common/`           | Shared guards, decorators, constants, and types.                      |
+| `src/config/`           | Configuration module and service.                                     |
+| `src/infrastructure/`   | Shared infrastructure such as Prisma, mail, and payment services.     |
+| `src/modules/`          | Feature modules.                                                      |
+| `src/generated/prisma/` | Generated Prisma client and model types.                              |
+| `prisma/`               | Prisma schema and migrations.                                         |
+| `test/`                 | End-to-end tests.                                                     |
 
 ## Backend Modules
 
@@ -187,6 +173,21 @@ Trade-off:
 
 This keeps controllers thin and separates business workflows from HTTP concerns. However, the current code does not fully use dependency inversion. Use cases often inject concrete infrastructure classes directly rather than interfaces from `application/ports`.
 
+## API Request Validation
+
+The backend uses a strict global NestJS `ValidationPipe` configured in:
+
+`erics-barber-api/src/config/validation.ts`
+
+Current behavior:
+
+- transforms request bodies and query strings into DTO instances
+- rejects properties that are not explicitly decorated on the DTO
+- converts decorated primitive values such as query `page` and `limit`
+- hides submitted values from validation error responses
+
+This makes DTOs the public request contract. When a new request field is added, it should also get an explicit validation decorator.
+
 ## Authentication Architecture
 
 Authentication is currently the most complete feature.
@@ -205,6 +206,10 @@ Important backend files:
 - `src/common/guards/auth.guard.ts`
 
 The detailed auth design is documented in [[Authentication Flows]].
+
+MFA is implemented as an email-code challenge after successful password validation. MFA-enabled users receive `MFA_REQUIRED` from login, complete `POST /auth/verify-mfa`, and only then receive access/refresh tokens.
+
+External provider login is not implemented. The schema keeps `ExternalAccount` for future provider identities, and provider UI/API work should stay behind the external-provider feature flag.
 
 ## Database Architecture
 
@@ -226,6 +231,7 @@ The main database entities are:
 
 - `User`
 - `Session`
+- `MfaChallenge`
 - `Booking`
 - `Barber`
 - `ExternalAccount`
@@ -261,11 +267,11 @@ The repository also contains a `Procfile`, which suggests Render-style deploymen
 
 Current local runtime assumptions:
 
-| App | Default port |
-| --- | --- |
-| Next.js frontend | `3000` |
-| NestJS backend | `4000` |
-| Swagger docs | `4000/api` |
+| App              | Default port |
+| ---------------- | ------------ |
+| Next.js frontend | `3000`       |
+| NestJS backend   | `4000`       |
+| Swagger docs     | `4000/api`   |
 
 ## Request Flow Example
 
@@ -285,8 +291,8 @@ sequenceDiagram
     Next->>Route: route handler receives credentials
     Route->>API: forwards credentials to backend
     API->>DB: validates user and creates session
-    API-->>Route: returns access token and refresh cookie
-    Route-->>Browser: stores accessToken cookie
+    API-->>Route: returns access token and refresh token
+    Route-->>Browser: stores HttpOnly accessToken and refreshToken cookies
     Browser->>Next: navigates to /my-account
 ```
 
@@ -294,9 +300,9 @@ sequenceDiagram
 
 - The codebase has a clear modular direction, but some modules are still placeholders.
 - The backend uses use cases, which improves readability, but some use cases are thin wrappers.
-- The frontend uses both direct OpenAPI client calls and Next.js API routes.
+- Browser-facing auth goes through Next.js BFF route handlers.
 - JWT access tokens are stored as HttpOnly cookies on the frontend domain, improving safety but increasing cookie-handling complexity.
-- Refresh-token sessions are stored in PostgreSQL, which supports logout and invalidation but requires careful implementation.
+- Refresh tokens are stored as HttpOnly cookies on the frontend domain and as hashed sessions in PostgreSQL.
 - Booking and barber modules exist before the product flows are complete.
 
 ## Architecture Principles To Maintain
@@ -310,4 +316,3 @@ As the project grows, it should preserve these principles:
 5. Keep auth-sensitive cookie handling on the server side.
 6. Mark unfinished features clearly in both code and docs.
 7. Avoid duplicating domain rules between frontend and backend.
-

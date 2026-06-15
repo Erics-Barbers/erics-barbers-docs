@@ -36,16 +36,16 @@ The `User` table is the central table in the schema. Every customer, barber, or 
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. Generated with `cuid()`. |
-| `name` | Display name for the user. Defaults to `Anonymous`. |
-| `email` | Unique login identifier. |
-| `passwordHash` | Hashed password. Optional to allow for external auth in future. |
-| `role` | Controls whether the user is an `ADMIN`, `BARBER`, or `CUSTOMER`. |
-| `isEmailVerified` | Tracks whether the user has verified their email address. |
-| `createdAt` | When the user was created. |
-| `updatedAt` | Automatically updated when the user changes. |
+| Field             | Purpose                                                           |
+| ----------------- | ----------------------------------------------------------------- |
+| `id`              | Primary key. Generated with `cuid()`.                             |
+| `name`            | Display name for the user. Defaults to `Anonymous`.               |
+| `email`           | Unique login identifier.                                          |
+| `passwordHash`    | Hashed password. Optional to allow for external auth in future.   |
+| `role`            | Controls whether the user is an `ADMIN`, `BARBER`, or `CUSTOMER`. |
+| `isEmailVerified` | Tracks whether the user has verified their email address.         |
+| `createdAt`       | When the user was created.                                        |
+| `updatedAt`       | Automatically updated when the user changes.                      |
 
 Design decision:
 
@@ -61,14 +61,14 @@ The `Barber` table represents users who can receive bookings.
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. |
-| `userId` | Unique link back to the `User` table. |
-| `displayName` | Public-facing barber name. Must be unique. |
-| `isActive` | Allows a barber to be disabled without deleting them. |
-| `phone` | Barber contact number. Must be unique. |
-| `createdAt` | When the barber record was created. |
+| Field         | Purpose                                               |
+| ------------- | ----------------------------------------------------- |
+| `id`          | Primary key.                                          |
+| `userId`      | Unique link back to the `User` table.                 |
+| `displayName` | Public-facing barber name. Must be unique.            |
+| `isActive`    | Allows a barber to be disabled without deleting them. |
+| `phone`       | Barber contact number. Must be unique.                |
+| `createdAt`   | When the barber record was created.                   |
 
 Relationship:
 
@@ -105,14 +105,14 @@ The `Booking` table stores appointments.
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. Generated with `uuid()`. |
-| `userId` | The customer who made the booking. |
-| `barberId` | Optional barber assigned to the booking. |
-| `startTime` | Appointment start time. |
-| `endTime` | Appointment end time. |
-| `createdAt` | When the booking was created. |
+| Field       | Purpose                                  |
+| ----------- | ---------------------------------------- |
+| `id`        | Primary key. Generated with `uuid()`.    |
+| `userId`    | The customer who made the booking.       |
+| `barberId`  | Optional barber assigned to the booking. |
+| `startTime` | Appointment start time.                  |
+| `endTime`   | Appointment end time.                    |
+| `createdAt` | When the booking was created.            |
 
 Relationship:
 
@@ -164,16 +164,20 @@ The `Session` table stores refresh-token sessions.
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. |
-| `userId` | User who owns the session. |
-| `refreshToken` | Unique stored refresh token value. In application code, this is intended to be hashed. |
-| `userAgent` | Browser/device information. |
-| `ipAddress` | IP address associated with the session. |
-| `expiresAt` | When the refresh session expires. |
-| `createdAt` | When the session was created. |
-| `barberId` | Optional link to a barber. |
+| Field                  | Purpose                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `id`                   | Primary key.                                                                           |
+| `userId`               | User who owns the session.                                                             |
+| `refreshToken`         | Unique stored refresh token value. In application code, this is intended to be hashed. |
+| `familyId`             | Groups rotated refresh sessions that came from the same login.                         |
+| `replacedBySessionId`  | Replacement session created when this session was rotated.                             |
+| `revokedAt`            | When the session stopped being active.                                                 |
+| `revokedReason`        | Why the session was revoked, such as `ROTATED` or `REPLAY_DETECTED`.                   |
+| `userAgent`            | Browser/device information.                                                            |
+| `ipAddress`            | IP address associated with the session.                                                |
+| `expiresAt`            | When the refresh session expires.                                                      |
+| `createdAt`            | When the session was created.                                                          |
+| `barberId`             | Optional link to a barber.                                                             |
 
 Relationship:
 
@@ -186,6 +190,10 @@ erDiagram
         string id PK
         string userId FK
         string refreshToken UK
+        string familyId
+        string replacedBySessionId
+        datetime revokedAt
+        SessionRevocationReason revokedReason
         string userAgent
         string ipAddress
         datetime expiresAt
@@ -196,11 +204,19 @@ erDiagram
 
 Design decision:
 
-The application does not rely only on stateless JWTs. It also stores refresh-token sessions in the database. This supports logout, session invalidation, and refresh-token rotation.
+The application does not rely only on stateless JWTs. It also stores refresh-token sessions in the database. This supports logout, session invalidation, refresh-token rotation, and refresh-token replay detection.
 
 Trade-off:
 
-Database-backed sessions give more control and are safer for logout, but they add complexity. The API must correctly create, rotate, expire, and delete sessions.
+Database-backed sessions give more control and are safer for logout, but they add complexity. The API must correctly create, rotate, revoke, expire, and delete sessions.
+
+Replay detection:
+
+When refresh tokens rotate, the old session row is retained and marked as `ROTATED` instead of being deleted immediately. If that old refresh token is submitted again before it expires, the API treats it as replay and revokes active sessions in the same `familyId`.
+
+Maintenance:
+
+Expired sessions are deleted by a scheduled backend job. `Session.expiresAt` is indexed so the cleanup query remains efficient as the session table grows.
 
 Current note:
 
@@ -212,13 +228,13 @@ The `ExternalAccount` table is designed for third-party authentication providers
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. |
-| `provider` | Name of the external provider, such as Google. |
-| `providerId` | User identifier from that provider. |
-| `userId` | Local user account linked to the external provider. |
-| `createdAt` | When the external account link was created. |
+| Field        | Purpose                                             |
+| ------------ | --------------------------------------------------- |
+| `id`         | Primary key.                                        |
+| `provider`   | Name of the external provider, such as Google.      |
+| `providerId` | User identifier from that provider.                 |
+| `userId`     | Local user account linked to the external provider. |
+| `createdAt`  | When the external account link was created.         |
 
 Relationship:
 
@@ -247,25 +263,47 @@ Important constraint:
 
 `provider` and `providerId` are unique together. That prevents the same external account from being linked more than once.
 
-## Mfa
+## MFA
 
-The `Mfa` table stores multi-factor authentication data.
+The current implemented MFA flow is email-code based.
+
+`User` stores the active MFA preference:
+
+| Field        | Purpose                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| `mfaEnabled` | Whether the login flow should require MFA after password validation. |
+| `mfaMethod`  | The configured method. Currently only `EMAIL` is supported.          |
+
+`MfaChallenge` stores short-lived login challenges:
+
+| Field        | Purpose                                                        |
+| ------------ | -------------------------------------------------------------- |
+| `id`         | Challenge id returned to the client after password validation. |
+| `userId`     | The user this challenge belongs to.                            |
+| `codeHash`   | Bcrypt hash of the 6-digit email code.                         |
+| `method`     | MFA method used for the challenge.                             |
+| `expiresAt`  | When the challenge expires.                                    |
+| `consumedAt` | Set when the challenge has been successfully used.             |
+| `createdAt`  | When the challenge was created.                                |
+
+The older `Mfa` table remains in the schema as a foundation for future TOTP-style MFA.
 
 Key fields:
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Primary key. |
-| `userId` | The user this MFA record belongs to. |
-| `secret` | TOTP secret. |
-| `enabled` | Whether MFA is enabled. |
-| `createdAt` | When MFA was configured. |
+| Field       | Purpose                              |
+| ----------- | ------------------------------------ |
+| `id`        | Primary key.                         |
+| `userId`    | The user this MFA record belongs to. |
+| `secret`    | TOTP secret.                         |
+| `enabled`   | Whether MFA is enabled.              |
+| `createdAt` | When MFA was configured.             |
 
 Relationship:
 
 ```mermaid
 erDiagram
     User ||--o| Mfa : configures
+    User ||--o{ MfaChallenge : receives
 
     Mfa {
         string id PK
@@ -274,15 +312,25 @@ erDiagram
         boolean enabled
         datetime createdAt
     }
+
+    MfaChallenge {
+        string id PK
+        string userId FK
+        string codeHash
+        MfaMethod method
+        datetime expiresAt
+        datetime consumedAt
+        datetime createdAt
+    }
 ```
 
 Design decision:
 
-MFA is modelled as a separate optional one-to-one table instead of storing MFA fields directly on `User`.
+The simple login decision lives on `User` through `mfaEnabled` and `mfaMethod`, while one-time challenge state lives in `MfaChallenge`.
 
 Trade-off:
 
-This keeps the user table simpler and makes MFA easier to evolve, but it adds another join when reading full account security settings.
+This keeps login checks cheap and keeps raw MFA codes out of the database, but it introduces a short-lived table that needs scheduled cleanup.
 
 ## Full Entity Relationship Diagram
 
@@ -297,6 +345,8 @@ erDiagram
         datetime createdAt
         datetime updatedAt
         boolean isEmailVerified
+        boolean mfaEnabled
+        MfaMethod mfaMethod
     }
 
     Barber {
@@ -344,8 +394,19 @@ erDiagram
         datetime createdAt
     }
 
+    MfaChallenge {
+        string id PK
+        string userId FK
+        string codeHash
+        MfaMethod method
+        datetime expiresAt
+        datetime consumedAt
+        datetime createdAt
+    }
+
     User ||--o{ ExternalAccount : has
     User ||--o| Mfa : has
+    User ||--o{ MfaChallenge : has
     User ||--o{ Session : owns
     User ||--o{ Booking : makes
     User ||--o| Barber : "can be"
@@ -355,15 +416,16 @@ erDiagram
 
 ## Relationship Summary
 
-| Relationship | Meaning |
-| --- | --- |
-| `User -> ExternalAccount` | One user can have many external login providers. |
-| `User -> Mfa` | One user can have one MFA setup. |
-| `User -> Session` | One user can have many active or historical sessions. |
-| `User -> Booking` | One user can make many bookings. |
-| `User -> Barber` | One user can optionally have one barber profile. |
-| `Barber -> Booking` | One barber can have many bookings. |
-| `Barber -> Session` | One barber can optionally be linked to many sessions. |
+| Relationship              | Meaning                                                  |
+| ------------------------- | -------------------------------------------------------- |
+| `User -> ExternalAccount` | One user can have many external login providers.         |
+| `User -> Mfa`             | One user can have one MFA setup.                         |
+| `User -> MfaChallenge`    | One user can have many short-lived MFA login challenges. |
+| `User -> Session`         | One user can have many active or historical sessions.    |
+| `User -> Booking`         | One user can make many bookings.                         |
+| `User -> Barber`          | One user can optionally have one barber profile.         |
+| `Barber -> Booking`       | One barber can have many bookings.                       |
+| `Barber -> Session`       | One barber can optionally be linked to many sessions.    |
 
 ## Constraints and Indexes
 
@@ -374,7 +436,10 @@ Important constraints:
 - `Barber.displayName` is unique.
 - `Barber.phone` is unique.
 - `Session.refreshToken` is unique.
+- `Session.expiresAt` is indexed for expired-session cleanup.
+- `Session.familyId` is indexed for session-family replay revocation.
 - `ExternalAccount.provider + ExternalAccount.providerId` is unique as a pair.
+- `MfaChallenge.userId` and `MfaChallenge.expiresAt` are indexed for challenge lookup and cleanup.
 - `Booking.userId` has an index to make user booking lookups faster.
 
 Cascade behaviour:
@@ -402,4 +467,3 @@ The easiest way to understand the database is:
 3. Customers create `Booking` records.
 4. Bookings can optionally be assigned to barbers.
 5. Authentication is supported by `Session`, `Mfa`, and `ExternalAccount`.
-
