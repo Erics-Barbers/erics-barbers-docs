@@ -10,6 +10,7 @@ Related notes:
 
 - [[Authentication Flows]]
 - [[Database Design]]
+- [[Roles and Permissions]]
 - [[Current System Architecture]]
 - [[Known Gaps and Roadmap]]
 
@@ -58,6 +59,7 @@ These features have some code or schema support, but are not complete end-to-end
 - barber API module
 - booking database table
 - barber database table
+- service database table with prices, durations, and descriptions
 - service listing page
 - feature flag for booking availability
 - refresh-token session model
@@ -74,7 +76,7 @@ These are planned or implied by the product, but not yet complete:
 - barber availability management
 - cancellation flow
 - booking status lifecycle
-- service selection connected to bookings
+- customer-facing service selection connected to live booking creation
 - role-based authorization enforcement
 - production-ready refresh-token flow on the frontend
 - admin tooling for onboarding barbers
@@ -128,6 +130,8 @@ Expected admin actions:
 Current state:
 
 The schema has an `ADMIN` role, but role-based enforcement is not complete.
+
+Role definitions and intended permission boundaries are documented in [[Roles and Permissions]].
 
 ## Technology Summary
 
@@ -214,7 +218,7 @@ The smallest useful version would allow:
 1. a customer to log in
 2. a customer to select a service
 3. a customer to choose a date and time
-4. the backend to prevent unavailable or past booking times
+4. the backend to calculate appointment duration from the selected service and prevent unavailable or past booking times
 5. the customer to see their booking after creation
 6. the barber or admin to view upcoming bookings
 
@@ -238,4 +242,3 @@ Because the project is partially implemented, documentation should be split into
 - roadmap docs
 
 This avoids pretending unfinished features already exist, while still capturing the intended direction of the system.
-

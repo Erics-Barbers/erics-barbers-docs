@@ -1,6 +1,6 @@
 # ADR 0005 - Use JWT Access Tokens With Refresh Token Sessions
 
-Status: Accepted, needs refinement
+Status: Accepted
 
 Date: 2026-05-10
 
@@ -23,10 +23,10 @@ Access tokens:
 
 Refresh tokens:
 
-- last 7 days
+- last 12 hours by default, or 7 days when the user selects "keep me signed in"
 - are intended to be stored as HttpOnly cookies
 - are recorded in the `Session` table
-- can be invalidated on logout
+- can be invalidated on logout, account deletion, expiry, or replay detection
 
 ## Alternatives Considered
 
@@ -120,16 +120,14 @@ Positive consequences:
 Negative consequences:
 
 - refresh-token handling is easy to get wrong
-- the current implementation needs review around bcrypt-hashed refresh token lookup
-- frontend refresh flow is not complete yet
 - cookie forwarding between Next.js and the backend needs careful handling
+- refresh-token replay detection can force logout for all sessions in a suspicious session family
+- refresh-token rotation needs database transactions to avoid invalidating the old token without creating the replacement session
 
 ## Current Follow-Up Work
 
-- review refresh-token storage and lookup strategy
-- complete the frontend refresh-token flow
-- make logout reliably invalidate backend sessions
-- add tests for token rotation, reuse, expiry, and logout
+- keep focused tests around token rotation, reuse, expiry, and logout
+- consider a future user-facing session management page
 
 ## Status Update - 2026-06-12
 
@@ -159,3 +157,17 @@ This does not make frontend navigation the authorization boundary. Protected API
 Related decision:
 
 - [[ADR 0011 - Use Role-Aware Login Redirects In The Next.js BFF]]
+
+## Status Update - 2026-07-02
+
+Implemented since the previous update:
+
+- login accepts a `rememberMe` choice from the UI
+- the backend returns `refreshMaxAgeSeconds` so the Next.js BFF can set the refresh cookie lifetime consistently
+- the Next.js login and MFA route handlers use the API-provided refresh lifetime instead of hard-coding seven days
+- refresh-token rotation is performed transactionally
+- expired refresh sessions are cleaned up by scheduled backend work
+- refresh-token replay detection revokes active sessions in the reused token's session family
+- API logout is idempotent from the client's perspective
+
+The session model now treats refresh tokens as revocable session credentials rather than simple long-lived JWTs.

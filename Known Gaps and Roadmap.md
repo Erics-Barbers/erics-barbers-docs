@@ -26,7 +26,7 @@ Implemented:
 - registration endpoint
 - registration frontend page
 - password hashing with bcrypt
-- email verification email through Resend
+- email verification email through the Resend-backed email outbox
 - email verification endpoint
 - email verification frontend page
 - resend verification email flow
@@ -36,7 +36,7 @@ Implemented:
 - refresh-token creation
 - session row creation in PostgreSQL
 - protected backend profile endpoint
-- frontend protected route proxy for account, booking, admin/barber-style private prefixes
+- frontend protected route proxy for account, staff booking, admin/barber-style private prefixes while customer booking entry pages remain public
 - logout flow through the Next.js BFF
 - refresh-token rotation
 - BFF refresh handling in the proxy and profile route
@@ -49,10 +49,10 @@ Implemented:
 - email-code MFA challenge flow integrated into login
 - scheduled cleanup for expired refresh-token sessions and MFA challenges
 - refresh-token replay detection with session-family revocation
+- password reset UI/BFF flow for customer and staff login views
 
 Known gaps:
 
-- password reset UI/BFF flow still needs to be built
 - external provider login is feature-flagged but not implemented
 - role enforcement is complete only where guards have been wired; unfinished modules still need authorization work as they are built
 
@@ -64,6 +64,7 @@ Implemented:
 - session table
 - barber table
 - booking table
+- service table with price, duration, description, and active state
 - MFA user flags and challenge table
 - external account table foundation
 - Prisma migrations
@@ -71,11 +72,11 @@ Implemented:
 
 Known gaps:
 
-- `Services` enum exists but is not connected to bookings
-- booking does not currently store a selected service
-- booking does not have a status field
-- booking does not store cancellation metadata
-- barber availability is not modelled yet
+- bookings can reference a selected service through `serviceId`
+- booking has a basic status lifecycle: `PENDING`, `CONFIRMED`, `CANCELLED`
+- booking stores cancellation metadata without a customer-provided reason field
+- barber availability schema and customer-facing day slot lookup endpoints exist
+- barber availability management endpoints are not built yet
 
 ## Frontend
 
@@ -90,16 +91,16 @@ Implemented:
 - email verification callback page
 - my account page with profile read/update and logout
 - services page
-- booking page placeholder and feature flag
+- booking page feature flag
 
 Known gaps:
 
-- no complete booking creation UI
+- initial customer booking creation UI exists, but needs full polish and test coverage
 - no booking management UI
 - no barber dashboard
 - no admin dashboard
 - no verified email-change flow from the account page
-- services are static and not connected to the backend
+- service catalog is database-backed; admin service management is still missing
 - user feedback and validation states are inconsistent across pages
 
 ## Backend
@@ -155,8 +156,7 @@ Tasks:
 - implement `RolesGuard`
 - apply role guard consistently
 - include role data in access tokens if needed
-- define what each role can do
-- document permissions in a dedicated `Roles and Permissions` note
+- keep [[Roles and Permissions]] updated as role behavior changes
 - add tests for forbidden and allowed role scenarios
 
 Why this matters:
@@ -167,28 +167,30 @@ The app already has `@Roles(...)` decorators and a `Role` enum, but permissions 
 
 Goal:
 
-Allow a logged-in customer to create and view a booking.
+Allow a customer to create a booking, including guest customers who are not logged in.
 
 Tasks:
 
-- connect services to bookings
-- decide whether service should be an enum or a `Service` table
-- add booking status, such as pending, confirmed, cancelled
+- expose database-backed services in the booking form
 - build booking form on the frontend
 - validate date and time input
 - prevent past bookings
 - prevent duplicate time slots
-- assign a barber or define unassigned booking behavior
-- show the customer's bookings
+- require customer booking creation to select a barber
+- use the barber day availability endpoint to show hourly slot groups
+- prompt existing-account emails to sign in, while still allowing guest booking
+- show authenticated customers their account bookings
+- use the dedicated booking cancel endpoint for customer cancellations
 - add backend tests for booking creation and listing
 
 Minimum useful customer flow:
 
 ```mermaid
 flowchart TD
-    Login["Customer logs in"] --> Services["Select service"]
-    Services --> Time["Choose date and time"]
-    Time --> Create["Create booking"]
+    Barber["Select barber"] --> Time["Choose date and time"]
+    Time --> Services["Select service"]
+    Services --> Contact["Enter contact details"]
+    Contact --> Create["Create booking"]
     Create --> Confirm["See confirmation"]
     Confirm --> List["View booking in account"]
 ```
@@ -205,7 +207,7 @@ Tasks:
 - ensure creating a barber also aligns the user's role
 - build barber-facing bookings view
 - decide whether barbers use the same frontend or a separate subdomain
-- model barber availability
+- build barber availability management endpoints and UI
 - support active/inactive barber state in the UI
 
 Design question:
@@ -270,8 +272,7 @@ Tasks:
 ## Auth Technical Debt
 
 - mixed frontend auth request paths should be monitored as new auth UI is added
-- refresh-token replay detection does not revoke a session family yet
-- generated OpenAPI client has `WITH_CREDENTIALS` set to `false`
+- generated OpenAPI auth methods should stay out of browser auth flows; use generated DTO/model types where useful
 
 ## API Technical Debt
 
@@ -285,14 +286,13 @@ Tasks:
 
 - some route pages are placeholders
 - UI styling is inconsistent in places
-- auth state is handled through cookies, localStorage, generated clients, and route handlers, which needs consolidation
-- static services page is not connected to backend data
+- auth state is intentionally centered on BFF cookies and route handlers; avoid adding direct browser-to-Nest auth calls
+- admin service management UI is not built yet
 
 ## Database Technical Debt
 
-- services need a clear model
-- booking needs status and cancellation fields
-- barber availability needs a model
+- manual guest booking claim flow is still missing for typo or different-email cases
+- barber availability needs rule and exception management endpoints
 - session model may not need `barberId`
 
 ## Documentation Roadmap

@@ -57,18 +57,18 @@ Main folders:
 
 Important routes:
 
-| Route                      | File                                   | Status                         |
-| -------------------------- | -------------------------------------- | ------------------------------ |
-| `/`                        | `app/page.tsx`                         | Implemented landing/home page. |
-| `/register`                | `app/register/page.tsx`                | Implemented.                   |
-| `/verify-email`            | `app/verify-email/page.tsx`            | Implemented.                   |
-| `/email-verify`            | `app/email-verify/page.tsx`            | Implemented.                   |
-| `/login`                   | `app/login/page.tsx`                   | Implemented.                   |
+| Route                      | File                                   | Status                          |
+| -------------------------- | -------------------------------------- | ------------------------------- |
+| `/`                        | `app/page.tsx`                         | Implemented landing/home page.  |
+| `/register`                | `app/register/page.tsx`                | Implemented.                    |
+| `/verify-email`            | `app/verify-email/page.tsx`            | Implemented.                    |
+| `/email-verify`            | `app/email-verify/page.tsx`            | Implemented.                    |
+| `/login`                   | `app/login/page.tsx`                   | Implemented.                    |
 | `/my-account`              | `app/my-account/page.tsx`              | Protected account/profile page. |
-| `/services`                | `app/services/page.tsx`                | Static services table.         |
-| `/bookings`                | `app/bookings/page.tsx`                | Feature-flagged placeholder.   |
-| `/bookings/new-booking`    | `app/bookings/new-booking/page.tsx`    | Placeholder.                   |
-| `/bookings/manage-booking` | `app/bookings/manage-booking/page.tsx` | Placeholder.                   |
+| `/services`                | `app/services/page.tsx`                | Database-backed services table. |
+| `/bookings`                | `app/bookings/page.tsx`                | Feature-flagged placeholder.    |
+| `/bookings/new-booking`    | `app/bookings/new-booking/page.tsx`    | Placeholder.                    |
+| `/bookings/manage-booking` | `app/bookings/manage-booking/page.tsx` | Placeholder.                    |
 
 ## Frontend API Strategy
 
@@ -124,6 +124,8 @@ Main folders:
 
 ## Backend Modules
 
+Current backend modules include auth, barbers, booking, health, notifications, payments, and services. The services module exposes the active service catalog from the database so booking flows can use service price, duration, and description data.
+
 The root module imports:
 
 - `AuthModule`
@@ -131,6 +133,7 @@ The root module imports:
 - `BookingModule`
 - `ConfigModule`
 - `HealthModule`
+- `OutboxModule`
 - `PaymentsModule`
 - `NotificationsModule`
 - `ThrottlerModule`
@@ -141,6 +144,7 @@ flowchart TD
     AppModule --> BarbersModule
     AppModule --> BookingModule
     AppModule --> HealthModule
+    AppModule --> OutboxModule
     AppModule --> PaymentsModule
     AppModule --> NotificationsModule
     AppModule --> ConfigModule
@@ -233,6 +237,7 @@ The main database entities are:
 - `Session`
 - `MfaChallenge`
 - `Booking`
+- `OutboxEvent`
 - `Barber`
 - `ExternalAccount`
 - `Mfa`
@@ -247,12 +252,15 @@ Resend is used for transactional email.
 
 Current uses:
 
-- email verification
-- password reset email foundation
+- email verification through the email outbox processor
+- password reset email through the email outbox processor
+- MFA login codes through the email outbox processor
+- booking confirmation, update, and cancellation emails through the email outbox processor
 
 Files:
 
 - `src/infrastructure/mail/resend.service.ts`
+- `src/infrastructure/outbox/email-outbox.processor.ts`
 - `src/modules/auth/infrastructure/prisma/auth.prisma-repository.ts`
 
 ## Render

@@ -1,6 +1,6 @@
 # ADR 0006 - Use Next.js API Routes For Frontend Auth Cookies
 
-Status: Accepted, needs refinement
+Status: Accepted
 
 Date: 2026-05-10
 
@@ -141,3 +141,16 @@ Implemented since the previous update:
 Related decision:
 
 - [[ADR 0011 - Use Role-Aware Login Redirects In The Next.js BFF]]
+
+## Status Update - 2026-07-02
+
+Implemented since the previous update:
+
+- login and MFA success now use the API-provided refresh cookie lifetime
+- the browser login form forwards the user's "keep me signed in" choice through the BFF
+- login success prefers a validated same-origin `next` path before falling back to `/my-account`
+- failed login and MFA errors are shown inline in the form, with the toast kept as secondary feedback
+- customer booking pages were removed from the protected customer route prefixes so users can browse booking entry points without logging in
+- staff booking pages remain protected on the staff surface
+
+The BFF remains responsible for browser-facing auth cookies, refresh retries, same-origin request checks, and frontend route protection.

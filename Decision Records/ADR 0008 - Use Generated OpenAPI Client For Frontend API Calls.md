@@ -1,6 +1,6 @@
 # ADR 0008 - Use Generated OpenAPI Client For Frontend API Calls
 
-Status: Accepted, needs consolidation
+Status: Accepted
 
 Date: 2026-05-10
 
@@ -94,8 +94,20 @@ Negative consequences:
 
 ## Current Follow-Up Work
 
-- decide which calls should use generated client directly
-- decide which calls should go through Next.js route handlers
 - update OpenAPI spec generation workflow
-- configure credentials if direct cookie-based calls are needed
+- use generated DTO/model types where useful
+- use generated request methods for non-auth backend resources as those UI flows are built
 
+## Status Update - 2026-07-02
+
+Auth browser flows are intentionally excluded from direct generated-client usage.
+
+Decision refinement:
+
+- browser auth UI calls local Next.js BFF routes under `/api/auth/*`
+- BFF route handlers own cookie setting, refresh retries, logout cleanup, and same-origin checks
+- generated auth DTO/model types may still be useful
+- generated auth request methods should not be used directly from browser auth flows
+- non-auth API areas, such as services, bookings, barbers, and future admin operations, can use the generated client where it fits
+
+This keeps the generated client useful without letting it bypass the BFF auth boundary.

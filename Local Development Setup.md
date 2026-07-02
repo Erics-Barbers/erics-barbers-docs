@@ -71,6 +71,7 @@ Verified backend environment variables:
 | `JWT_SECRET` | Secret used to sign and verify JWTs. |
 | `RESEND_API_KEY` | API key for sending transactional email through Resend. |
 | `CLIENT_BASE_URL` | Frontend URL used for CORS and email verification/reset links. |
+| `STAFF_CLIENT_BASE_URL` | Staff frontend URL used for staff password reset links. |
 | `BOOKING_ENABLED` | Enables booking endpoints when set to `true`. |
 
 Example local `.env`:
@@ -80,6 +81,7 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/erics_barber"
 JWT_SECRET="replace-with-a-local-development-secret"
 RESEND_API_KEY="replace-with-resend-key"
 CLIENT_BASE_URL="http://localhost:3000"
+STAFF_CLIENT_BASE_URL="http://staff.localhost:3000"
 BOOKING_ENABLED="false"
 ```
 
@@ -304,6 +306,30 @@ If the frontend flag is false, the booking page shows a "coming soon" message.
 
 If the backend flag is false, the booking guard rejects booking API requests.
 
+## Booking Demo Data
+
+The local booking UI needs active barbers, services, and availability rules. The API repo includes scoped scripts for deterministic development data:
+
+```powershell
+npm run db:booking:seed
+```
+
+This creates demo services, barber users, active barber profiles, and weekday 09:00-17:00 availability.
+
+To remove the demo booking data:
+
+```powershell
+npm run db:booking:reset
+```
+
+To reset and seed in one step:
+
+```powershell
+npm run db:booking:reseed
+```
+
+The reset script only targets the demo barber emails and demo service names used by the seed script. It does not wipe arbitrary customer accounts.
+
 ## Troubleshooting
 
 ## Frontend Cannot Reach Backend
@@ -367,4 +393,3 @@ npm run build
 ```
 
 Run only the checks relevant to the files changed if time is limited, but the full checks are preferred before merging.
-
