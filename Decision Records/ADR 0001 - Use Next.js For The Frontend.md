@@ -93,3 +93,14 @@ Negative consequences:
 - improve auth cookie handling
 - document server/client boundaries in frontend code as the app grows
 
+## Status Update - 2026-07-01
+
+The Next.js frontend now serves both customer and staff surfaces from one project.
+
+Customer-facing pages live under `app/customer`, and staff-facing pages live under `app/staff`.
+
+The frontend uses host-aware proxy routing so the root customer domain maps to customer routes and the staff subdomain maps to staff routes.
+
+Related decision:
+
+- [[ADR 0010 - Use One Next.js App For Customer And Staff Domains]]

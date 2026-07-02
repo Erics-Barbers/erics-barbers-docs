@@ -127,3 +127,17 @@ Remaining follow-up work:
 
 - build the password reset UI/BFF flow
 - keep generated auth client usage out of browser auth flows
+
+## Status Update - 2026-07-01
+
+Implemented since the previous update:
+
+- the login and MFA BFF routes now decode the returned access token to read the user's role
+- successful login responses include a `redirectTo` value for role-aware navigation
+- customer and staff login pages share the same login flow component
+- customer and staff domains keep host-scoped frontend auth cookies by default
+- staff login on the staff subdomain redirects barbers and admins to the clean staff dashboard path
+
+Related decision:
+
+- [[ADR 0011 - Use Role-Aware Login Redirects In The Next.js BFF]]

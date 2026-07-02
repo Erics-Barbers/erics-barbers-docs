@@ -19,6 +19,7 @@ Access tokens:
 - last 15 minutes
 - are used as Bearer tokens for protected API calls
 - include user identity through `sub`
+- include the user's role for frontend navigation and backend role guards
 
 Refresh tokens:
 
@@ -146,3 +147,15 @@ Remaining follow-up work:
 
 - decide whether to add session-family replay detection
 - add expired session cleanup
+
+## Status Update - 2026-07-01
+
+The access token role claim is now part of the frontend navigation contract.
+
+The Next.js BFF decodes the role from the access token after login and MFA verification to return a role-aware `redirectTo` value.
+
+This does not make frontend navigation the authorization boundary. Protected API routes must still verify access tokens and enforce role permissions in the backend.
+
+Related decision:
+
+- [[ADR 0011 - Use Role-Aware Login Redirects In The Next.js BFF]]

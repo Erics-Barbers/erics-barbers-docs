@@ -25,16 +25,19 @@ These records are not meant to be perfect or permanent. They document the reason
 | [[ADR 0007 - Require Email Verification Before Login]] | Require users to verify email before logging in. | Accepted |
 | [[ADR 0008 - Use Generated OpenAPI Client For Frontend API Calls]] | Generate frontend API client code from OpenAPI. | Accepted, needs consolidation |
 | [[ADR 0009 - Use Feature Flags For Booking Availability]] | Gate incomplete booking functionality behind feature flags. | Accepted |
+| [[ADR 0010 - Use One Next.js App For Customer And Staff Domains]] | Serve customer and staff subdomains from one host-aware Next.js app. | Accepted |
+| [[ADR 0011 - Use Role-Aware Login Redirects In The Next.js BFF]] | Decode the access token in the BFF to choose post-login destinations. | Accepted |
+| [[ADR 0012 - Keep The NestJS API On An Always-On Backend Host]] | Keep the NestJS API on an always-on backend host instead of Vercel Functions. | Accepted |
+| [[ADR 0013 - Model Services As Database Records]] | Store services as business data with price, duration, description, and lifecycle state. | Accepted |
+| [[ADR 0014 - Model Barber Availability With Rules And Exceptions]] | Compute barber slots from weekly rules, date exceptions, and existing bookings. | Accepted |
+| [[ADR 0015 - Use Transactional Outbox For Operational Emails]] | Record email work in an outbox table and process it asynchronously. | Accepted |
+| [[ADR 0016 - Enforce Booking Integrity In The API And Database]] | Combine API validation with database constraints for booking correctness. | Accepted |
+| [[ADR 0017 - Use UUID Booking References As Bearer Credentials]] | Use high-entropy booking UUIDs for guest booking management by reference. | Accepted |
+| [[ADR 0018 - Scope Booking Access By Role And Reference]] | Apply booking data scoping by role in the backend service layer. | Accepted |
 
 ## Suggested Future Records
 
 Potential ADRs to add later:
 
-- customer and barber experiences in one app versus separate apps or subdomains
-- modelling services as an enum versus a database table
-- booking status lifecycle
-- barber availability model
 - payment provider choice
-- deployment platform choice
 - testing strategy
-

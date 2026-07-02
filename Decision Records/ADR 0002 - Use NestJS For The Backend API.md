@@ -116,3 +116,13 @@ Negative consequences:
 The API now uses a strict global `ValidationPipe` with DTO whitelisting, unknown-property rejection, transformation, and sanitized validation errors.
 
 This means DTOs are treated as the public request contract. New request fields should be added with explicit validation decorators, otherwise they will be rejected by the global pipe.
+
+## Status Update - 2026-07-01
+
+The NestJS API remains the main backend service and should stay on an always-on backend host rather than moving into Vercel Functions.
+
+This preserves a traditional service model for authentication, bookings, scheduled cleanup, and future background notification workflows.
+
+Related decision:
+
+- [[ADR 0012 - Keep The NestJS API On An Always-On Backend Host]]
