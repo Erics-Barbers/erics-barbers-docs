@@ -37,6 +37,7 @@ These records are not meant to be perfect or permanent. They document the reason
 | [[ADR 0019 - Use Email MFA And Feature-Flag External Providers]] | Use email-code MFA now and keep external identity providers behind a feature flag. | Accepted |
 | [[ADR 0020 - Use Soft Delete And Anonymization For Account Deletion]] | Soft-delete and anonymize accounts by default while preserving operational reporting history. | Accepted |
 | [[ADR 0021 - Allow Public Customer Booking Entry Points]] | Let unauthenticated users view customer booking entry pages while keeping staff/account booking access protected. | Accepted |
+| [[ADR 0022 - Build A Customer Mobile App With React Native And Expo]] | Build a customer-only React Native and Expo app that communicates directly with NestJS while preserving guest booking. | Accepted |
 
 ## Suggested Future Records
 
