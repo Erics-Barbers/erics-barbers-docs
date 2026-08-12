@@ -10,12 +10,17 @@ Related notes:
 - [[Current System Architecture]]
 - [[Authentication Flows]]
 - [[Database Design]]
+- [[Shared Product Requirements]]
+- [[Web Client Requirements]]
+- [[Web App Delivery Roadmap]]
+- [[Mobile App Requirements]]
+- [[Mobile App Delivery Roadmap]]
 
 ## Current Implementation Snapshot
 
 The project is partially built.
 
-The authentication flow is the main implemented feature. Booking, barber management, payments, notifications, and admin workflows are either placeholders or backend foundations.
+Authentication is the most mature end-to-end capability. Customer booking creation and management now have substantial frontend and backend foundations, but need documentation reconciliation, consistent polish, and stronger end-to-end verification. Staff pages are interface foundations backed mainly by sample data. Payments, push notifications, and administrative workflows are not complete product capabilities.
 
 ## Implemented
 
@@ -95,9 +100,8 @@ Implemented:
 
 Known gaps:
 
-- initial customer booking creation UI exists, but needs full polish and test coverage
-- no booking management UI
-- no barber dashboard
+- customer booking creation and management UI exist, but need full polish and end-to-end test coverage
+- staff dashboard and related staff pages use sample or static data rather than complete live workflows
 - no admin dashboard
 - no verified email-change flow from the account page
 - service catalog is database-backed; admin service management is still missing
@@ -128,125 +132,32 @@ Known gaps:
 - payments module is placeholder-level
 - notifications module is placeholder-level
 
-## Priority Roadmap
+## Delivery Roadmap
 
-## Phase 1: Stabilize Authentication
+The original roadmap used six sequential phases:
 
-Goal:
+1. stabilize authentication;
+2. implement role enforcement;
+3. build the minimum customer booking flow;
+4. build barber management;
+5. build administration and operations; and
+6. complete production readiness.
 
-Make the existing authentication flow reliable before building more features on top of it.
+Development did not remain sequential. Authentication, customer booking, booking management, host routing, and staff interface foundations progressed in parallel. As a result, a phase number no longer communicated either implementation status or release readiness.
 
-Tasks:
+The web roadmap now uses outcome-based releases:
 
-- build password reset UI/BFF flow
-- keep auth documentation updated as flows change
+| Release | Outcome |
+| --- | --- |
+| Web 0.x | Retrospective platform and authentication foundation. |
+| Web 1.0 | Customer booking MVP for guest and registered customers. |
+| Web 1.1 | Customer self-service and experience improvements. |
+| Web 2.0 | Live, authorized barber workspace. |
+| Web 3.0 | Administrative and shop operations. |
 
-Why this comes first:
+Security, authorization, API contracts, testing, accessibility, operations, and documentation are continuous workstreams with gates in every release. They are no longer postponed to a final production-readiness phase.
 
-Booking will depend on knowing who the current user is. If auth is unstable, every user-facing feature becomes harder to debug.
-
-## Phase 2: Implement Role Enforcement
-
-Goal:
-
-Make customer, barber, and admin permissions real.
-
-Tasks:
-
-- implement `RolesGuard`
-- apply role guard consistently
-- include role data in access tokens if needed
-- keep [[Roles and Permissions]] updated as role behavior changes
-- add tests for forbidden and allowed role scenarios
-
-Why this matters:
-
-The app already has `@Roles(...)` decorators and a `Role` enum, but permissions are not fully enforced yet. Booking and barber workflows will need reliable authorization.
-
-## Phase 3: Build Minimum Booking Flow
-
-Goal:
-
-Allow a customer to create a booking, including guest customers who are not logged in.
-
-Tasks:
-
-- expose database-backed services in the booking form
-- build booking form on the frontend
-- validate date and time input
-- prevent past bookings
-- prevent duplicate time slots
-- require customer booking creation to select a barber
-- use the barber day availability endpoint to show hourly slot groups
-- prompt existing-account emails to sign in, while still allowing guest booking
-- show authenticated customers their account bookings
-- use the dedicated booking cancel endpoint for customer cancellations
-- add backend tests for booking creation and listing
-
-Minimum useful customer flow:
-
-```mermaid
-flowchart TD
-    Barber["Select barber"] --> Time["Choose date and time"]
-    Time --> Services["Select service"]
-    Services --> Contact["Enter contact details"]
-    Contact --> Create["Create booking"]
-    Create --> Confirm["See confirmation"]
-    Confirm --> List["View booking in account"]
-```
-
-## Phase 4: Barber Management
-
-Goal:
-
-Let the business manage barbers and let barbers see their bookings.
-
-Tasks:
-
-- build barber onboarding flow
-- ensure creating a barber also aligns the user's role
-- build barber-facing bookings view
-- decide whether barbers use the same frontend or a separate subdomain
-- build barber availability management endpoints and UI
-- support active/inactive barber state in the UI
-
-Design question:
-
-Should barber features live in the same Next.js app under routes like `/barber`, or should there be a separate subdomain such as `barber.erics-barbers...`?
-
-## Phase 5: Admin and Operations
-
-Goal:
-
-Give the shop owner/admin enough control to operate the application without developer intervention.
-
-Tasks:
-
-- admin dashboard
-- manage services and prices
-- manage barbers
-- view all bookings
-- cancel or reschedule bookings
-- basic audit trail for operational actions
-
-## Phase 6: Production Readiness
-
-Goal:
-
-Make the app safer and easier to run in production.
-
-Tasks:
-
-- deployment guide
-- release checklist
-- database backup plan
-- logging strategy
-- monitoring and alerting
-- stronger error handling
-- rate limiting review
-- security review
-- accessibility review
-- end-to-end tests for core user journeys
+The full scope, gates, current cross-release evidence, and change-control model are maintained in [[Web App Delivery Roadmap]]. Requirement allocation is maintained in [[Web Client Requirements]].
 
 ## Feature Status Table
 
@@ -258,11 +169,11 @@ Tasks:
 | Logout             | Implemented     | Uses BFF route, clears local cookies, redirects to the homepage, and API logout is idempotent. |
 | Refresh token      | Implemented     | Backend rotation plus BFF refresh handling for protected navigation and profile.               |
 | Profile            | Partial         | Backend read/update exists, frontend page is minimal.                                          |
-| Booking creation   | Partial         | Backend foundation exists, frontend placeholder.                                               |
-| Booking management | Not implemented | Needs customer-facing and barber/admin-facing flows.                                           |
-| Barber management  | Partial         | Backend foundation exists, frontend missing.                                                   |
-| Role enforcement   | Partial         | Decorators exist, guard not implemented.                                                       |
-| Services           | Partial         | Static frontend table, schema enum not connected to booking.                                   |
+| Booking creation   | Partial         | Guest and authenticated UI/API foundations exist; polish and end-to-end verification remain.   |
+| Booking management | Partial         | Lookup, listing, rescheduling, and cancellation UI/API foundations exist; verification remains. |
+| Barber management  | Partial         | Data foundations and sample-backed staff pages exist; live operational workflows are missing.  |
+| Role enforcement   | Partial         | The role guard and focused tests exist; unfinished modules still require complete enforcement. |
+| Services           | Partial         | Customer catalogue is database-backed; administrative management is missing.                   |
 | Payments           | Placeholder     | Module exists but not implemented.                                                             |
 | Notifications      | Placeholder     | Module exists but not implemented.                                                             |
 | Health checks      | Implemented     | Database and Resend health checks exist.                                                       |

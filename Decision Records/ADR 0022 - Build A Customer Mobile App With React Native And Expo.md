@@ -14,9 +14,13 @@ The booking API already supports public service and barber discovery, availabili
 
 ## Decision
 
-Build a React Native mobile application using Expo in the `erics-barbers-app` repository.
+Build a React Native mobile application using Expo and Continuous Native Generation (CNG) in the `erics-barbers-app` repository.
+
+Native iOS and Android projects will initially be generated when needed rather than maintained as permanent source files. Native configuration will be expressed through Expo app configuration and config plugins. The generated `ios` and `android` directories will remain outside source control unless a later accepted architectural decision establishes a need to maintain them directly.
 
 Version 1 will be a customer application only. Staff and admin mobile experiences are outside the initial scope.
+
+This does not allocate staff or administration interfaces to a later mobile version. Any such expansion requires a separate business case, requirements baseline, UX and security analysis, and an accepted decision about whether it belongs in the customer application, a separate application, or the responsive staff website.
 
 The mobile application will:
 
@@ -88,6 +92,7 @@ A customer-only first version matches the most mature product and API surface. D
 ## Trade-Offs
 
 - Some user journeys and validation behavior can be reused conceptually, but Next.js components cannot be reused directly.
+- Native changes need to be represented through Expo configuration, config plugins, or native modules so generated projects remain reproducible.
 - The backend must support a native refresh and logout transport in addition to the existing cookie transport.
 - Universal links require coordinated mobile, backend, email-template, and website configuration.
 - The project will maintain separate web and mobile presentation layers.
@@ -116,6 +121,7 @@ Negative consequences:
 - resolve current API/OpenAPI contract drift and automate drift detection
 - define universal-link domains, routes, fallback behavior, and token-handling rules
 - define the version 1 customer screen and navigation map
+- maintain the release-neutral [[Mobile App Requirements]] and [[Mobile App Delivery Roadmap]] documents
+- decide whether native staff or administration interfaces are needed before assigning requirements or a target version
 - scaffold the Expo application only after the foundational contracts are stable
 - plan push-token registration, notification preferences, and reminder delivery in a later ADR
-
