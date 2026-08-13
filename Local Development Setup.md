@@ -1,395 +1,256 @@
 # Local Development Setup
 
-Status: current setup guide for the active Next.js frontend and NestJS backend.
-
-This note explains how to run Eric's Barbers locally.
+Status: current setup guide for the Next.js web client, NestJS API, and React Native/Expo mobile scaffold.
 
 Related notes:
 
-- [[Project Overview]]
 - [[Current System Architecture]]
 - [[Authentication Flows]]
-- [[Database Design]]
+- [[Mobile App Delivery Roadmap]]
+- [[ADR 0025 - Establish The NestJS OpenAPI Document As The Canonical Client Contract]]
 
-## Active Projects
+## Repositories
 
-The active application is split across two folders:
+The repositories are independent Git projects and should be installed and run from their own directories:
 
-| Folder | Purpose |
+| Repository | Purpose |
 | --- | --- |
-| `erics-barbers-ui` | Next.js frontend |
-| `erics-barber-api` | NestJS backend API |
+| `erics-barber-api` | Shared NestJS backend and canonical OpenAPI contract |
+| `erics-barbers-ui` | Next.js web client and browser authentication BFF |
+| `erics-barbers-app` | React Native and Expo customer application |
+| `erics-barbers-docs` | Requirements, architecture, roadmaps, and ADRs |
 
-There is also an older or experimental Vite app:
+Examples below assume a shell opened in the workspace root. Adjust paths to match the local clone location.
 
-`erics-barbers-ui-react`
+## Shared Prerequisites
 
-That app does not appear to be part of the current active implementation.
-
-## Prerequisites
-
-Install:
-
-- Node.js
+- Node.js 22; the API currently pins `22.21.0`
 - npm
+- Git
 - PostgreSQL
-- access to a Resend API key if testing email sending
 
-The backend `package.json` specifies:
+Use the API's pinned Node version across the workspace unless a client repository later records a different supported version.
 
-```json
-{
-  "engines": {
-    "node": "22.21.0"
-  }
-}
-```
+## API Setup
 
-The README says Node 18 or higher, but the package metadata is more specific. Prefer Node 22 when working on this backend.
-
-## Backend Setup
-
-Open a terminal in:
-
-```powershell
-C:\Users\fahmi\Repositories\erics-barbers\erics-barber-api
-```
-
-Install dependencies:
-
-```powershell
+```bash
+cd erics-barber-api
 npm install
 ```
 
-Create a `.env` file in `erics-barber-api`.
-
-Verified backend environment variables:
+Create `.env` with local values. Variables currently used by the API include:
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
-| `JWT_SECRET` | Secret used to sign and verify JWTs. |
-| `RESEND_API_KEY` | API key for sending transactional email through Resend. |
-| `CLIENT_BASE_URL` | Frontend URL used for CORS and email verification/reset links. |
-| `STAFF_CLIENT_BASE_URL` | Staff frontend URL used for staff password reset links. |
-| `BOOKING_ENABLED` | Enables booking endpoints when set to `true`. |
+| `JWT_SECRET` | JWT signing and verification secret. |
+| `RESEND_API_KEY` | Transactional email credentials. |
+| `CLIENT_BASE_URL` | Customer web origin for CORS and customer email links. |
+| `STAFF_CLIENT_BASE_URL` | Staff web origin for staff password-reset links. |
+| `BOOKING_ENABLED` | Enables guarded booking endpoints when `true`. |
+| `AUTH_EXTERNAL_PROVIDERS_ENABLED` | Enables external-provider foundations when `true`; providers are not implemented. |
 
-Example local `.env`:
+Example:
 
 ```dotenv
 DATABASE_URL="postgresql://postgres:password@localhost:5432/erics_barber"
 JWT_SECRET="replace-with-a-local-development-secret"
-RESEND_API_KEY="replace-with-resend-key"
+RESEND_API_KEY="replace-with-a-development-key"
 CLIENT_BASE_URL="http://localhost:3000"
 STAFF_CLIENT_BASE_URL="http://staff.localhost:3000"
-BOOKING_ENABLED="false"
+BOOKING_ENABLED="true"
+AUTH_EXTERNAL_PROVIDERS_ENABLED="false"
 ```
 
-Do not commit real secrets.
+Never commit real credentials.
 
-## Database Setup
+Generate Prisma code, apply development migrations, and optionally seed booking data:
 
-The Prisma schema is:
-
-```powershell
-prisma\schema.prisma
-```
-
-Prisma config is:
-
-```powershell
-prisma.config.ts
-```
-
-Generate the Prisma client:
-
-```powershell
+```bash
 npx prisma generate
-```
-
-Apply migrations locally:
-
-```powershell
 npx prisma migrate dev
-```
-
-Open Prisma Studio if needed:
-
-```powershell
-npm run prisma:ui
-```
-
-## Running The Backend
-
-Start the backend in development mode:
-
-```powershell
-npm run start:dev
-```
-
-The API listens on:
-
-```text
-http://localhost:4000
-```
-
-Swagger docs are available at:
-
-```text
-http://localhost:4000/api
-```
-
-Health check:
-
-```text
-http://localhost:4000/health
-```
-
-## Backend Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run start:dev` | Start NestJS in watch mode. |
-| `npm run build` | Run Prisma migrate/generate and build NestJS. |
-| `npm run test` | Run unit tests. |
-| `npm run test:e2e` | Run e2e tests. |
-| `npm run lint` | Run ESLint with fixes. |
-| `npm run format` | Format TypeScript files. |
-| `npm run format:prisma` | Format Prisma schema. |
-| `npm run prisma:ui` | Open Prisma Studio. |
-
-## Frontend Setup
-
-Open a terminal in:
-
-```powershell
-C:\Users\fahmi\Repositories\erics-barbers\erics-barbers-ui
-```
-
-Install dependencies:
-
-```powershell
-npm install
-```
-
-Create a `.env.local` file in `erics-barbers-ui`.
-
-Verified frontend environment variables:
-
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | Base URL used by Next.js auth route handlers to call the backend. |
-| `NEXT_PUBLIC_BOOKING_ENABLED` | Enables the booking page UI when set to `true`. |
-
-Example local `.env.local`:
-
-```dotenv
-NEXT_PUBLIC_API_BASE_URL="http://localhost:4000"
-NEXT_PUBLIC_BOOKING_ENABLED="false"
-```
-
-## Running The Frontend
-
-Start the frontend in development mode:
-
-```powershell
-npm run dev
-```
-
-The frontend usually runs at:
-
-```text
-http://localhost:3000
-```
-
-## Frontend Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start Next.js development server. |
-| `npm run build` | Generate API client and build the Next.js app. |
-| `npm run start` | Start the built Next.js app. |
-| `npm run lint` | Run ESLint. |
-| `npm run format` | Format app, test, and API files. |
-| `npm run generate:api-client` | Generate the OpenAPI client into `api/generated`. |
-| `npm run generate:api-types` | Generate OpenAPI TypeScript types. |
-
-## Typical Local Workflow
-
-1. Start PostgreSQL.
-2. Start the backend:
-
-```powershell
-cd C:\Users\fahmi\Repositories\erics-barbers\erics-barber-api
-npm run start:dev
-```
-
-3. Start the frontend:
-
-```powershell
-cd C:\Users\fahmi\Repositories\erics-barbers\erics-barbers-ui
-npm run dev
-```
-
-4. Open the frontend:
-
-```text
-http://localhost:3000
-```
-
-5. Open Swagger if checking backend endpoints:
-
-```text
-http://localhost:4000/api
-```
-
-## API Client Generation
-
-The frontend has a generated OpenAPI client in:
-
-```powershell
-api\generated
-```
-
-The source OpenAPI spec in the frontend repo is:
-
-```powershell
-api\api-spec.json
-```
-
-Generate the client:
-
-```powershell
-npm run generate:api-client
-```
-
-Important note:
-
-The generated client is based on `api/api-spec.json`. If the backend API changes, the OpenAPI spec in the frontend repo must be updated before regenerating the client.
-
-## Auth Development Notes
-
-Authentication uses cookies and JWTs.
-
-Frontend:
-
-- stores `accessToken` as an HttpOnly cookie from the Next.js login route
-- protects `/my-account` through `proxy.ts`
-
-Backend:
-
-- sets `refreshToken` as an HttpOnly cookie
-- verifies Bearer access tokens through `AuthGuard`
-- stores refresh-token sessions in PostgreSQL
-
-Cookie note:
-
-Some cookies are configured with `secure: true`. This is correct for production HTTPS, but if cookies do not appear during local HTTP development, cookie security settings should be the first thing to inspect.
-
-## Booking Feature Flag
-
-Booking has both frontend and backend feature flags.
-
-Frontend:
-
-```dotenv
-NEXT_PUBLIC_BOOKING_ENABLED="false"
-```
-
-Backend:
-
-```dotenv
-BOOKING_ENABLED="false"
-```
-
-If the frontend flag is false, the booking page shows a "coming soon" message.
-
-If the backend flag is false, the booking guard rejects booking API requests.
-
-## Booking Demo Data
-
-The local booking UI needs active barbers, services, and availability rules. The API repo includes scoped scripts for deterministic development data:
-
-```powershell
 npm run db:booking:seed
 ```
 
-This creates demo services, barber users, active barber profiles, and weekday 09:00-17:00 availability.
+Start the API:
 
-To remove the demo booking data:
-
-```powershell
-npm run db:booking:reset
+```bash
+npm run start:dev
 ```
 
-To reset and seed in one step:
+Local endpoints:
 
-```powershell
-npm run db:booking:reseed
+- API: `http://localhost:4000`
+- Swagger UI: `http://localhost:4000/api`
+- health: `http://localhost:4000/health`
+
+Useful API commands:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run test` | Run unit tests. |
+| `npm run test:e2e` | Run API end-to-end tests. |
+| `npm run lint` | Run ESLint with fixes. |
+| `npm run prisma:ui` | Open Prisma Studio. |
+| `npm run db:booking:reset` | Remove only the deterministic demo booking data. |
+| `npm run db:booking:reseed` | Reset and recreate demo booking data. |
+| `npm run openapi:generate` | Regenerate the canonical OpenAPI document. |
+| `npm run openapi:check` | Fail if the committed OpenAPI document is stale. |
+
+Installing dependencies activates the tracked Husky pre-commit hook. API commits run `openapi:check` and stop if controller/DTO metadata no longer matches `openapi/openapi.json`. CI must also run this check because local hooks can be skipped.
+
+## Web Setup
+
+```bash
+cd erics-barbers-ui
+npm install
 ```
 
-The reset script only targets the demo barber emails and demo service names used by the seed script. It does not wipe arbitrary customer accounts.
+Create `.env.local` as needed:
 
-## Troubleshooting
-
-## Frontend Cannot Reach Backend
-
-Check:
-
-- backend is running on port `4000`
-- `NEXT_PUBLIC_API_BASE_URL` points to the backend
-- backend CORS allows `CLIENT_BASE_URL`
-
-## Verification Email Link Is Wrong
-
-Check:
-
-- backend `CLIENT_BASE_URL`
-- Resend API key
-- email content generated in `auth.prisma-repository.ts`
-
-## Login Works But Protected Page Redirects
-
-Check:
-
-- `accessToken` cookie exists on the frontend domain
-- token is not expired
-- cookie `secure` behavior in local development
-- `proxy.ts` matcher includes the route being accessed
-
-## Backend Cannot Connect To Database
-
-Check:
-
-- PostgreSQL is running
-- `DATABASE_URL` is correct
-- migrations have been applied
-- Prisma client has been generated
-
-## Emails Do Not Send
-
-Check:
-
-- `RESEND_API_KEY`
-- sender domain in `resend.service.ts`
-- Resend account/domain configuration
-
-## Before Opening A Pull Request
-
-Recommended local checks:
-
-Backend:
-
-```powershell
-npm run test
-npm run lint
+```dotenv
+NEXT_PUBLIC_API_BASE_URL="http://localhost:4000"
+NEXT_PUBLIC_BOOKING_ENABLED="true"
+NEXT_PUBLIC_AUTH_EXTERNAL_PROVIDERS_ENABLED="false"
+NEXT_PUBLIC_STAFF_SITE_URL="http://staff.localhost:3000"
+NEXT_PUBLIC_TEST_STAFF_SITE_URL="http://staff.test.localhost:3000"
 ```
 
-Frontend:
+Start the web application:
 
-```powershell
-npm run lint
+```bash
+npm run dev
+```
+
+The customer site normally runs at `http://localhost:3000`. Host-aware staff and test routing may require using the configured local hostnames.
+
+Browser authentication goes through Next.js BFF routes under `/api/auth/*`. Access and refresh tokens are stored in HttpOnly cookies on the web domain. Do not call NestJS auth endpoints directly from browser UI code.
+
+## Mobile Setup
+
+In addition to the shared prerequisites, install:
+
+### iOS on macOS
+
+- Xcode and Xcode Command Line Tools
+- an iOS Simulator runtime
+- CocoaPods, when required by native dependency installation
+
+### Android
+
+- Android Studio
+- Android SDK and platform tools
+- Java 17
+- a configured Android Virtual Device, or a physical device with USB debugging
+- `ANDROID_HOME` pointing to the SDK, or `android/local.properties` with a valid `sdk.dir` in a generated native project
+
+Install the mobile dependencies:
+
+```bash
+cd erics-barbers-app
+npm install
+```
+
+Build and install the native development client on a running simulator/emulator:
+
+```bash
+npm run ios
+npm run android
+```
+
+Then start Metro for that development client:
+
+```bash
+npx expo start --dev-client
+```
+
+`npm run ios` and `npm run android` use Expo prebuild as needed. The generated `ios` and `android` folders are local build artifacts and remain ignored under the accepted CNG architecture. Native settings must be reproducible from `app.json` and config plugins.
+
+The current mobile repository is a scaffold. Its API environment convention, generated API layer, TanStack Query setup, and native authentication storage are Mobile 1.0 delivery work; do not invent local environment variables or treat the browser cookie flow as its authentication contract.
+
+### Emulator access to the local API
+
+- iOS Simulator can normally reach the Mac API through `http://localhost:4000`.
+- Android Emulator normally reaches the host machine through `http://10.0.2.2:4000`.
+- A physical device needs a reachable LAN or tunnel URL and matching API CORS/network configuration.
+
+Do not hard-code a development URL into feature code. The environment strategy is part of the mobile architecture ticket.
+
+## Canonical OpenAPI Workflow
+
+The API repository owns:
+
+```text
+erics-barber-api/openapi/openapi.json
+```
+
+After an accepted API contract change:
+
+```bash
+cd erics-barber-api
+npm run openapi:generate
+npm run openapi:check
+cp openapi/openapi.json ../erics-barbers-ui/api/api-spec.json
+
+cd ../erics-barbers-ui
+npm run generate:api-client
 npm run build
 ```
 
-Run only the checks relevant to the files changed if time is limited, but the full checks are preferred before merging.
+Mobile client generation will consume the same API-owned artifact when its API layer is introduced. Client copies are synchronized artifacts, not independent sources of truth.
+
+## Typical Integrated Workflow
+
+1. Start PostgreSQL.
+2. Start NestJS on port `4000`.
+3. Start the client being developed:
+   - Next.js on port `3000`; or
+   - Metro on port `8081` with an installed mobile development build.
+4. Run the checks relevant to the changed repository.
+5. If the API contract changed, regenerate, synchronize, and verify affected clients.
+
+## Troubleshooting
+
+### Web cannot reach the API
+
+Check that the API is running, `NEXT_PUBLIC_API_BASE_URL` points to it, and `CLIENT_BASE_URL` matches the browser origin allowed by CORS.
+
+### Android cannot build
+
+Confirm an emulator/device is running, `java -version` reports Java 17, `ANDROID_HOME` points to the Android SDK, and `adb devices` sees the target.
+
+### iOS development build is missing
+
+`npx expo start --dev-client` serves JavaScript to an already installed development build. Run `npm run ios` first whenever the compatible native application is not installed or native configuration/dependencies have changed.
+
+### OpenAPI pre-commit check fails
+
+Run:
+
+```bash
+npm run openapi:generate
+git add openapi/openapi.json
+```
+
+Review the contract diff before committing again.
+
+### Email links are wrong
+
+Check `CLIENT_BASE_URL`, `STAFF_CLIENT_BASE_URL`, Resend configuration, and the email template/link generation. Universal/app-link routing is planned mobile work and must retain a safe web fallback.
+
+## Before Review
+
+Run proportionate checks in every changed repository. At minimum:
+
+```bash
+# API
+npm run openapi:check
+npm run test
+
+# Web
+npm run lint
+npm run build
+
+# Mobile
+npm run lint
+```

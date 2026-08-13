@@ -20,7 +20,7 @@ Related notes:
 
 The project is partially built.
 
-Authentication is the most mature end-to-end capability. Customer booking creation and management now have substantial frontend and backend foundations, but need documentation reconciliation, consistent polish, and stronger end-to-end verification. Staff pages are interface foundations backed mainly by sample data. Payments, push notifications, and administrative workflows are not complete product capabilities.
+Browser authentication is the most mature end-to-end capability. Customer booking creation and management have substantial web and API foundations, but need consistent polish and stronger end-to-end verification. The React Native repository is currently an Expo scaffold: Mobile 1.0 requirements, UX, architecture, roadmap, and tickets exist, while product feature implementation remains early. Staff pages are web interface foundations backed mainly by sample data. Payments, push notifications, and administrative workflows are not complete product capabilities.
 
 ## Implemented
 
@@ -132,6 +132,27 @@ Known gaps:
 - payments module is placeholder-level
 - notifications module is placeholder-level
 
+## Mobile
+
+Implemented foundations:
+
+- React Native and Expo project scaffold using Expo Router and TypeScript
+- iOS and Android application identifiers and local native development-build support
+- Expo Continuous Native Generation workflow with generated native directories ignored
+- mobile UX views and customer journey design
+- accepted customer-only Mobile 1.0 requirements, delivery roadmap, and GitHub backlog
+- accepted direct-to-NestJS architecture and canonical OpenAPI ownership
+
+Known gaps:
+
+- native authentication transport, secure credential storage, refresh, logout, and session restoration are not implemented
+- generated mobile API client and stable error handling are not established
+- TanStack Query, forms, application state, and environment boundaries are not established
+- public discovery, guest booking, signed-in booking management, and cross-client verification are not implemented in the app
+- universal/app links and web fallback are not configured
+- store, signing, accessibility, telemetry, support, release, and rollback evidence is incomplete
+- staff and administration mobile interfaces have no accepted scope or target release
+
 ## Delivery Roadmap
 
 The original roadmap used six sequential phases:
@@ -213,13 +234,10 @@ Useful docs to add next:
 - `Frontend Architecture.md`
 - `Backend Architecture.md`
 - `API Design.md`
-- `Roles and Permissions.md`
 - `Booking Flow - Planned.md`
 - `Barber Dashboard - Planned.md`
 - `Testing Strategy.md`
 - `Deployment Guide.md`
-- `ADR - Auth Cookie Strategy.md`
-- `ADR - Booking Domain Model.md`
 
 ## Guiding Principle
 
