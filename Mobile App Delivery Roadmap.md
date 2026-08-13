@@ -2,7 +2,7 @@
 
 Status: active planning baseline
 
-Version: 1.0
+Version: 1.2
 
 Recorded: 12 August 2026
 
@@ -28,6 +28,9 @@ Related documents:
 - [[Web App Delivery Roadmap]]
 - [[Authentication Flows]]
 - [[ADR 0022 - Build A Customer Mobile App With React Native And Expo]]
+- [[Mobile App Delivery Backlog]]
+- [[Delivery Workflow]]
+- [GitHub Mobile App Delivery Project](https://github.com/orgs/Erics-Barbers/projects/1)
 
 ## Product Context
 
@@ -128,6 +131,8 @@ The complete requirement allocation is maintained in [[Mobile App Requirements]]
 
 The increments below are dependency-aware delivery slices, not public versions. Work may overlap where its contracts are stable.
 
+GitHub execution is tracked through the ticket catalogue in [[Mobile App Delivery Backlog]] and the private organization Project defined in [[Delivery Workflow]]. The roadmap remains the source of release sequence and gates; the Project records day-to-day state and handover context.
+
 ## Increment A — Contracts and Application Architecture
 
 ### Outcome
@@ -141,7 +146,7 @@ Remove the major uncertainties that would otherwise force feature rework.
 - define and accept the native login, refresh, logout, and revocation contract;
 - define stable error codes required by both mobile and web clients;
 - confirm guest booking reference endpoints and access rules;
-- confirm booking window and same-day change policies;
+- propagate the accepted booking window, same-day change, snapshot, idempotency, initial-status, email, guest-linking, and rescheduling policies into API and client contracts;
 - establish API, authentication, navigation, state, forms, and secure-storage boundaries; and
 - establish development, test, and production environment handling.
 
@@ -158,7 +163,7 @@ Remove the major uncertainties that would otherwise force feature rework.
 - contract generation is repeatable and drift checks fail when expected;
 - secure credential behaviour is tested independently of screens;
 - API environments and error handling are documented; and
-- unresolved shared policies are recorded as explicit blockers or accepted deferrals.
+- the accepted shared policies are reflected in requirements and downstream implementation tickets.
 
 This increment is the main dependency for authenticated feature delivery. Public view work can proceed against stable public contracts while native authentication is being finalized.
 
@@ -205,6 +210,7 @@ Prove the complete commercial booking journey without requiring a customer accou
 - guest contact details
 - review and confirmation
 - double-submit and stale-slot handling
+- idempotent booking submission and retry handling
 - booking reference presentation
 - guest reference lookup
 - eligible guest rescheduling and cancellation
@@ -219,7 +225,7 @@ Prove the complete commercial booking journey without requiring a customer accou
 ### Exit Evidence
 
 - a guest can create and manage a booking on iOS and Android;
-- concurrent or stale-slot conflicts do not produce duplicate bookings;
+- concurrent, repeated, or stale-slot requests do not produce duplicate bookings;
 - references are handled as sensitive bearer credentials;
 - booking policies and timezone behaviour match the web client and API; and
 - the complete guest journey has API integration and end-to-end test evidence.
@@ -333,6 +339,8 @@ Mobile 1.0 may be released only when:
 - the native authentication contract and secure storage behaviour are accepted and verified;
 - guest and authenticated booking creation and management pass on iOS and Android;
 - booking integrity, ownership, concurrency, timezone, and same-day policies are verified;
+- accepted service terms remain stable in booking history after catalogue changes;
+- repeated booking-creation requests satisfy the idempotency contract;
 - universal and app links pass installed-app and web-fallback scenarios;
 - accessibility checks cover the complete core journeys;
 - privacy, account deletion, telemetry, and sensitive-data handling are reviewed;
@@ -341,7 +349,7 @@ Mobile 1.0 may be released only when:
 
 ## Mobile 1.1 Candidate Scope
 
-Mobile 1.1 is not yet an accepted baseline. Candidate outcomes include:
+Mobile 1.1 is not yet an accepted baseline. Book Again is explicitly deferred from Mobile 1.0 and retained here as a candidate alongside:
 
 - Book Again using an earlier booking;
 - eligible service and barber preselection;
@@ -432,4 +440,6 @@ When scope changes:
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.2 | 12 August 2026 | Recorded the accepted Mobile 1.0 booking policies and added snapshot and idempotency evidence to delivery and release gates. |
+| 1.1 | 12 August 2026 | Linked the roadmap to the assistant-managed GitHub execution workflow and Mobile 1.0 backlog catalogue. |
 | 1.0 | 12 August 2026 | Created the Mobile 1.0 delivery roadmap with dependency-aware increments, release gates, continuous workstreams, and undecided future staff and administration scope. |

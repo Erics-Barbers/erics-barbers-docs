@@ -38,6 +38,9 @@ These records are not meant to be perfect or permanent. They document the reason
 | [[ADR 0020 - Use Soft Delete And Anonymization For Account Deletion]] | Soft-delete and anonymize accounts by default while preserving operational reporting history. | Accepted |
 | [[ADR 0021 - Allow Public Customer Booking Entry Points]] | Let unauthenticated users view customer booking entry pages while keeping staff/account booking access protected. | Accepted |
 | [[ADR 0022 - Build A Customer Mobile App With React Native And Expo]] | Build a customer-only React Native and Expo app that communicates directly with NestJS while preserving guest booking. | Accepted |
+| [[ADR 0023 - Snapshot Accepted Service Terms On Bookings]] | Preserve the service name, duration, and price accepted for each booking independently of later catalogue changes. | Accepted |
+| [[ADR 0024 - Make Booking Creation Idempotent]] | Use client-generated idempotency keys and database-backed replay semantics for booking creation. | Accepted |
+| [[ADR 0025 - Establish The NestJS OpenAPI Document As The Canonical Client Contract]] | Generate and commit one deterministic API-owned OpenAPI document for web and mobile clients. | Accepted |
 
 ## Suggested Future Records
 

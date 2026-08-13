@@ -2,7 +2,7 @@
 
 Status: accepted baseline
 
-Version: 1.0
+Version: 1.1
 
 Recorded: 12 August 2026
 
@@ -47,8 +47,7 @@ These requirements do not prescribe cookies, native secure storage, or another a
 - `PROD-SVC-004` — The booking duration shall be derived from the selected service.
 - `PROD-SVC-005` — Deactivating a service shall not remove it from historical booking records.
 - `PROD-SVC-006` — A customer shall see the applicable service price and duration before confirming a booking.
-
-Whether bookings snapshot the service name, duration, and price remains an explicit product decision. Without snapshots, changes to a service can affect how historical bookings are presented.
+- `PROD-SVC-007` — A booking shall snapshot the accepted service name, duration, and price so later catalogue changes do not rewrite the terms shown for that booking.
 
 ## Barber Catalogue
 
@@ -57,8 +56,7 @@ Whether bookings snapshot the service name, duration, and price remains an expli
 - `PROD-BAR-003` — Only active barbers shall be available for new bookings.
 - `PROD-BAR-004` — Deactivating a barber shall preserve their historical bookings.
 - `PROD-BAR-005` — A new booking shall be assigned to an eligible barber.
-
-Whether customers can select any available barber remains an explicit product decision.
+- `PROD-BAR-006` — A customer shall be able to select any active, eligible barber who has availability for the chosen service and appointment time.
 
 ## Availability
 
@@ -67,13 +65,13 @@ Whether customers can select any available barber remains an explicit product de
 - `PROD-AVL-003` — Service duration shall be considered when calculating whether a slot is available.
 - `PROD-AVL-004` — Availability shall be evaluated in the shop's configured timezone.
 - `PROD-AVL-005` — Past appointment times shall not be offered.
-- `PROD-AVL-006` — Appointment times shall fall within the permitted booking window.
+- `PROD-AVL-006` — Appointment times shall be bookable from the next shop-calendar day through one calendar month ahead, inclusive, using the shop's configured timezone.
 - `PROD-AVL-007` — A slot shown as available shall remain provisional until the booking is successfully created.
 - `PROD-AVL-008` — Final availability shall be revalidated when a booking is created or rescheduled.
 - `PROD-AVL-009` — Concurrent requests shall not create conflicting bookings for the same barber.
 - `PROD-AVL-010` — Cancelling a booking shall release its occupied time.
 
-The exact future booking window must be defined as a shared business policy rather than as an independently chosen client-side constant.
+Clients may use the shared booking-window policy to guide date selection, but the API remains the enforcement boundary.
 
 ## Booking Creation
 
@@ -84,13 +82,13 @@ The exact future booking window must be defined as a shared business policy rath
 - `PROD-BOOK-005` — An authenticated booking shall use the authenticated customer's identity rather than trusting a submitted customer identifier.
 - `PROD-BOOK-006` — A successful booking shall receive a unique, high-entropy reference.
 - `PROD-BOOK-007` — A successful booking shall expose its service, barber, start time, end time, price, and status.
-- `PROD-BOOK-008` — A successfully reserved and validated appointment shall initially receive the agreed booking status.
+- `PROD-BOOK-008` — A successfully reserved and validated Mobile 1.0 appointment shall initially receive `CONFIRMED` status.
 - `PROD-BOOK-009` — Failure during booking creation shall not leave a partial booking.
-- `PROD-BOOK-010` — Repeated submission of the same booking request should not unintentionally create duplicate appointments.
+- `PROD-BOOK-010` — Booking creation shall accept a client-generated idempotency key so a retry of the same request returns the original result and reuse of that key for different booking details is rejected as a conflict.
 - `PROD-BOOK-011` — No payment shall be required as part of the version 1 booking lifecycle.
 - `PROD-BOOK-012` — Business-critical booking rules shall be enforced by the backend rather than only by a client.
 
-The current implementation creates successfully validated bookings as `CONFIRMED`. The business purpose of `PENDING` must be agreed before clients depend on that state.
+`PENDING` has no customer-booking meaning in Mobile 1.0. It remains reserved until a separately accepted workflow defines its transitions, ownership, expiry, availability effect, and customer presentation.
 
 ## Booking Access and Ownership
 
@@ -99,7 +97,7 @@ The current implementation creates successfully validated bookings as `CONFIRMED
 - `PROD-ACCESS-003` — Possession of a guest booking reference shall be treated as possession of a sensitive bearer credential.
 - `PROD-ACCESS-004` — Booking references shall not be predictable.
 - `PROD-ACCESS-005` — A customer shall not be able to access another customer's booking using its internal database identifier.
-- `PROD-ACCESS-006` — Linking a guest booking to an account shall not invalidate the existing reference unless a later accepted security decision changes this behaviour.
+- `PROD-ACCESS-006` — After a customer verifies an account email, guest bookings with the same normalized email shall be linked automatically to that account without invalidating their existing secure references.
 - `PROD-ACCESS-007` — Barber access shall be limited to bookings assigned to that barber.
 - `PROD-ACCESS-008` — Administrative access shall require the appropriate authenticated role.
 - `PROD-ACCESS-009` — Client-side navigation controls shall not replace backend authorization.
@@ -110,24 +108,26 @@ The current implementation creates successfully validated bookings as `CONFIRMED
 - `PROD-MGMT-002` — An authenticated customer shall be able to view their past and cancelled bookings.
 - `PROD-MGMT-003` — A guest shall be able to manage an eligible booking using its secure reference.
 - `PROD-MGMT-004` — An eligible future booking shall be reschedulable.
-- `PROD-MGMT-005` — Rescheduling shall permit only supported changes to service, barber, and appointment time.
+- `PROD-MGMT-005` — Rescheduling shall allow the customer to change service, barber, and appointment time, subject to current eligibility, pricing, duration, policy, and availability.
 - `PROD-MGMT-006` — Rescheduling shall perform the same availability validation as booking creation.
 - `PROD-MGMT-007` — An eligible future booking shall be cancellable.
 - `PROD-MGMT-008` — Cancellation shall use a dedicated business operation rather than a general booking update.
 - `PROD-MGMT-009` — Cancelling a booking shall record its cancellation status and audit metadata.
 - `PROD-MGMT-010` — Cancelling an already-cancelled booking shall not produce an inconsistent state.
 - `PROD-MGMT-011` — Past bookings shall not be rescheduled or cancelled online.
-- `PROD-MGMT-012` — Same-day changes shall follow the agreed shop policy.
+- `PROD-MGMT-012` — Same-day bookings shall not be rescheduled or cancelled through a customer client; the customer shall be directed to contact the shop.
 - `PROD-MGMT-013` — Cancelled bookings shall remain available for historical and operational reporting.
 - `PROD-MGMT-014` — A repeat customer shall be able to start a new booking using details from an earlier booking, subject to current availability, pricing, and active records.
+
+`PROD-MGMT-014` is explicitly deferred from Mobile 1.0 and remains a Mobile 1.1 candidate. It is not required for the first mobile release.
 
 ## Customer Communications
 
 - `PROD-COM-001` — Registration shall generate an email-verification communication.
 - `PROD-COM-002` — Password recovery shall generate a secure, time-limited reset communication.
-- `PROD-COM-003` — A successful guest booking shall provide the customer with the reference needed to manage it.
+- `PROD-COM-003` — A successful booking shall queue a confirmation email; a guest confirmation shall include the secure reference needed to manage the booking.
 - `PROD-COM-004` — Booking communications shall identify the appointment time, service, barber, and management route.
-- `PROD-COM-005` — Rescheduling and cancellation should generate an appropriate confirmation.
+- `PROD-COM-005` — A successful rescheduling or cancellation shall queue an appropriate confirmation email.
 - `PROD-COM-006` — Operational email delivery shall be retryable without repeating the associated business transaction.
 - `PROD-COM-007` — Failure to send a confirmation email shall not silently undo a successfully committed booking.
 - `PROD-COM-008` — Links shall support the appropriate web or installed-application destination.
@@ -166,20 +166,22 @@ Push notifications are outside the version 1 scope. A future push capability sho
 - `PROD-NFR-009` — Availability and booking operations shall remain safe under concurrent requests.
 - `PROD-NFR-010` — Shared customer capabilities shall not require knowledge of whether a request originated from web or mobile unless the contract explicitly requires a client-specific transport.
 
-## Decisions Still Required
+## Accepted Mobile 1.0 Booking Policies
 
-The following policy decisions remain open and may refine individual requirements without changing the overall shared-product model:
+The Mobile 1.0 booking baseline is:
 
-1. Define the permitted future booking window.
-2. Define the same-day cancellation and rescheduling policy.
-3. Decide whether customers can select any available barber.
-4. Decide whether bookings snapshot service name, duration, and price.
-5. Define whether `PENDING` has a version 1 business meaning.
-6. Decide which booking confirmation, rescheduling, and cancellation emails are mandatory.
-7. Decide whether matching-email guest bookings are linked to accounts automatically.
-8. Define how accidental duplicate booking submissions are identified.
-9. Decide whether a customer can change service while rescheduling.
-10. Confirm whether Book Again is required for the first mobile release or a later increment.
+1. Bookings are offered from tomorrow through one calendar month ahead in the shop's `Europe/London` timezone.
+2. Same-day cancellation and rescheduling are unavailable online; customers are directed to contact the shop.
+3. Customers may select any active, eligible barber with suitable availability.
+4. Bookings snapshot the accepted service name, duration, and price.
+5. Customer bookings are created as `CONFIRMED`; `PENDING` is reserved and has no Mobile 1.0 business meaning.
+6. Confirmation, rescheduling, and cancellation emails are mandatory when a booking email exists. They are queued transactionally, and temporary delivery failure does not undo the booking operation.
+7. Matching-email guest bookings are linked only after the account email has been verified.
+8. Booking creation uses a client-generated idempotency key. Identical retries return the original result; reuse for different details returns a conflict.
+9. Rescheduling may change the service, barber, and appointment time, with current terms and availability revalidated before acceptance.
+10. Book Again is deferred from Mobile 1.0 and retained as a Mobile 1.1 candidate.
+
+The snapshot architecture is recorded in [[ADR 0023 - Snapshot Accepted Service Terms On Bookings]]. The idempotency contract is recorded in [[ADR 0024 - Make Booking Creation Idempotent]].
 
 The ordering of steps in a booking interface, such as service-first or barber-first, is a client UX decision rather than a shared business rule, provided the resulting booking satisfies the same shared requirements.
 
@@ -198,4 +200,5 @@ When a requirement changes:
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.1 | 12 August 2026 | Accepted the Mobile 1.0 booking policies, including service-term snapshots, confirmed initial status, mandatory booking emails, verified-email guest linking, idempotent creation, flexible rescheduling, and Book Again deferral. |
 | 1.0 | 12 August 2026 | Recorded the accepted shared product requirements baseline for web and mobile clients. |

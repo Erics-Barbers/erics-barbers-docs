@@ -10,6 +10,8 @@ Project documentation for the Eric's Barbers system.
 - [Web App Delivery Roadmap](Web%20App%20Delivery%20Roadmap.md)
 - [Mobile App Requirements](Mobile%20App%20Requirements.md)
 - [Mobile App Delivery Roadmap](Mobile%20App%20Delivery%20Roadmap.md)
+- [Mobile App Delivery Backlog](Mobile%20App%20Delivery%20Backlog.md)
+- [Delivery Workflow](Delivery%20Workflow.md)
 - [Current System Architecture](Current%20System%20Architecture.md)
 - [Database Design](Database%20Design.md)
 - [Authentication Flows](Authentication%20Flows.md)

@@ -1,8 +1,8 @@
 # Mobile App Requirements
 
-Status: proposed client baseline
+Status: accepted client baseline
 
-Version: 0.2
+Version: 1.0
 
 Recorded: 12 August 2026
 
@@ -91,6 +91,7 @@ If accepted, staff and administration work shall receive dedicated requirement i
 - `MOB-SVC-004` — Customers shall be able to view active barbers available for customer booking. Supports `PROD-BAR-001` through `PROD-BAR-003`.
 - `MOB-SVC-005` — Inactive services and barbers shall not be offered for a new booking.
 - `MOB-SVC-006` — Service and barber data shall be obtained from the shared API rather than maintained as an independent mobile catalogue.
+- `MOB-SVC-007` — A historical booking shall display its accepted service name, duration, and price snapshots rather than silently replacing them with later catalogue values. Supports `PROD-SVC-007`.
 
 ## Booking Creation Requirements
 
@@ -98,7 +99,7 @@ If accepted, staff and administration work shall receive dedicated requirement i
 - `MOB-BOOK-002` — The application shall allow customers to create bookings as guests. Supports `PROD-BOOK-001` and `PROD-BOOK-004`.
 - `MOB-BOOK-003` — A booking journey shall collect an active service, eligible barber, permitted date, and available appointment time. Supports `PROD-BOOK-003`.
 - `MOB-BOOK-004` — Available times shall be obtained from the shared API and displayed as provisional until booking creation succeeds. Supports `PROD-AVL-001` through `PROD-AVL-008`.
-- `MOB-BOOK-005` — The application shall offer only dates and times allowed by the shared booking policy.
+- `MOB-BOOK-005` — The application shall offer dates from tomorrow through one calendar month ahead in the shop's configured timezone and shall still rely on API validation. Supports `PROD-AVL-004` through `PROD-AVL-008`.
 - `MOB-BOOK-006` — Guest customers shall be able to provide the name, email address, and phone number required by `PROD-BOOK-004`.
 - `MOB-BOOK-007` — Known signed-in customer details shall be used to avoid unnecessary repeated data entry.
 - `MOB-BOOK-008` — When a guest enters an email belonging to an existing account, the application shall offer login without preventing continuation as a guest.
@@ -106,7 +107,7 @@ If accepted, staff and administration work shall receive dedicated requirement i
 - `MOB-BOOK-010` — A recoverable booking draft should survive temporary application backgrounding.
 - `MOB-BOOK-011` — Before confirmation, the application shall display the service, barber, date, time, duration, price, and customer details. Supports `PROD-SVC-006` and `PROD-BOOK-007`.
 - `MOB-BOOK-012` — Booking creation shall be submitted to the shared API for final availability and integrity validation. Supports `PROD-AVL-008`, `PROD-AVL-009`, and `PROD-BOOK-012`.
-- `MOB-BOOK-013` — The application shall prevent accidental repeated submission while booking creation is in progress. Supports `PROD-BOOK-010`.
+- `MOB-BOOK-013` — The application shall generate one idempotency key for a booking submission, reuse it for safe retries of that submission, replace it when the booking intent changes, and also prevent repeated taps while a request is in progress. Supports `PROD-BOOK-010`.
 - `MOB-BOOK-014` — If a selected slot becomes unavailable, the application shall explain the conflict and allow another slot to be selected.
 - `MOB-BOOK-015` — Successful creation shall show the appointment details, status, and booking reference. Supports `PROD-BOOK-006` through `PROD-BOOK-008`.
 - `MOB-BOOK-016` — No payment shall be collected in the Mobile 1.0 booking journey. Supports `PROD-BOOK-011`.
@@ -120,10 +121,10 @@ The final booking-step order remains a mobile UX decision. The current design re
 - `MOB-MGMT-003` — Customers shall be able to view the service, barber, time, price, status, and permitted actions for an accessible booking.
 - `MOB-MGMT-004` — Guest customers shall be able to retrieve an eligible booking using its secure reference. Supports `PROD-ACCESS-002` through `PROD-ACCESS-005`.
 - `MOB-MGMT-005` — Eligible future bookings shall provide a rescheduling journey. Supports `PROD-MGMT-004` through `PROD-MGMT-006`.
-- `MOB-MGMT-006` — Rescheduling shall use current API availability and the same final validation used for booking creation.
+- `MOB-MGMT-006` — Rescheduling shall permit service, barber, and appointment-time changes and shall present and validate current price, duration, policy, eligibility, and API availability before acceptance. Supports `PROD-MGMT-005` and `PROD-MGMT-006`.
 - `MOB-MGMT-007` — Eligible future bookings shall provide a cancellation journey. Supports `PROD-MGMT-007` through `PROD-MGMT-010`.
 - `MOB-MGMT-008` — Cancellation shall require explicit confirmation before the request is sent.
-- `MOB-MGMT-009` — The interface shall explain when same-day, past, or already-cancelled bookings cannot be changed. Supports `PROD-MGMT-011` and `PROD-MGMT-012`.
+- `MOB-MGMT-009` — The interface shall explain when same-day, past, or already-cancelled bookings cannot be changed; same-day customers shall be directed to contact the shop. Supports `PROD-MGMT-011` and `PROD-MGMT-012`.
 - `MOB-MGMT-010` — Successful rescheduling or cancellation shall display the updated booking state.
 - `MOB-MGMT-011` — Booking references shall not be included in ordinary analytics events, crash reports, or client logs. Supports `PROD-PRIV-007`.
 - `MOB-MGMT-012` — A Book Again action should start a new booking from an earlier booking when `PROD-MGMT-014` is included in the allocated release scope.
@@ -252,27 +253,27 @@ The editable screen and journey map is maintained in `erics-barbers-app/Mobile A
 | --- | --- | --- |
 | Mobile 0.x internal builds | Foundational portions of `MOB-SEC-*`, `MOB-TECH-*`, and `MOB-DEP-*` | Internal engineering baseline rather than a public customer release. |
 | Mobile 1.0 | All requirements stated with **shall**, except requirements explicitly deferred or blocked by an unresolved accepted decision | First customer-only iOS and Android release. Detailed sequencing and release gates are in [[Mobile App Delivery Roadmap]]. |
-| Mobile 1.1 candidate | `MOB-MGMT-012`, `MOB-RET-004`, `MOB-RET-005`, and compatible experience improvements | Candidate repeat-customer scope. Allocation remains subject to the open Book Again decision and Mobile 1.0 learning. |
+| Mobile 1.1 candidate | `MOB-MGMT-012`, `MOB-RET-004`, `MOB-RET-005`, and compatible experience improvements | Candidate repeat-customer scope. Book Again is explicitly deferred from Mobile 1.0; final Mobile 1.1 acceptance remains subject to prioritisation and Mobile 1.0 learning. |
 | Later customer releases | Push notifications, payments, and other accepted customer capabilities | Requirements and version numbers remain to be decided. |
 | Future staff/admin mobile | No requirements or version allocated | Requires a separate business case, requirements baseline, UX model, security analysis, and architectural decision. |
 
 Implementation status is tracked separately from release allocation using the statuses defined in [[Mobile App Delivery Roadmap]].
 
-## Validation Before Acceptance
+## Remaining Delivery Decisions
 
-Before this proposed baseline is marked accepted:
+The client baseline is accepted. Delivery still requires:
 
-1. decide whether Book Again is required in Mobile 1.0 or remains a Mobile 1.1 candidate;
-2. decide whether customers can select any available barber;
-3. confirm the same-day change and future booking-window policies;
-4. confirm the booking-step order after UX review;
-5. define supported iOS and Android versions;
-6. accept the native authentication contract; and
-7. add acceptance criteria for each release-scoped journey.
+1. confirmation of the booking-step order after UX review;
+2. definition of supported iOS and Android versions;
+3. acceptance of the native authentication contract; and
+4. journey-level acceptance criteria and verification evidence.
+
+These delivery decisions do not reopen the booking policies accepted in [[Shared Product Requirements]].
 
 ## Version History
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0 | 12 August 2026 | Accepted the client baseline and incorporated the Mobile 1.0 booking-window, barber-choice, same-day-change, snapshot, status, email, guest-linking, idempotency, rescheduling, and Book Again policies. |
 | 0.2 | 12 August 2026 | Renamed the catalogue for use across releases, allocated the current requirements to Mobile 1.0, and recorded that future staff and administration requirements and versions remain undecided. |
 | 0.1 | 12 August 2026 | Created the first consolidated customer mobile V1 requirements baseline linked to the shared product requirements and mobile UX map. |
