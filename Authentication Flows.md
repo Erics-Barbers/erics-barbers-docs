@@ -1,19 +1,20 @@
 # Authentication Flows
 
-This note explains how authentication works across the Eric's Barbers frontend and backend.
+This note explains implemented browser authentication and the accepted boundary for forthcoming native authentication. It distinguishes current behavior from Mobile 1.0 delivery work.
 
 It covers:
 
 - how the Next.js application handles login, registration, email verification, protected pages, and logout
 - how the NestJS API implements authentication use cases
 - how PostgreSQL stores users and sessions through Prisma
+- how the React Native client will differ from the browser transport
 - current design decisions, trade-offs, and implementation gaps
 
-Related note: [[Database Design]]
+Related notes: [[Database Design]], [[Current System Architecture]], and [[ADR 0022 - Build A Customer Mobile App With React Native And Expo]].
 
 ## High-Level Architecture
 
-Authentication is split across three layers:
+Implemented browser authentication is split across three layers:
 
 1. The Next.js frontend renders the user interface and handles browser-facing flows.
 2. The NestJS backend owns the real authentication rules and token generation.
@@ -29,11 +30,25 @@ flowchart LR
     NestAPI --> Resend["Resend Email"]
 ```
 
+The accepted native path adds a second client transport:
+
+```mermaid
+flowchart LR
+    Mobile["React Native app"] --> NestAPI["NestJS Auth API"]
+    NestAPI --> Prisma["Prisma"]
+    Prisma --> Postgres["PostgreSQL"]
+    NestAPI --> Resend["Resend Email"]
+```
+
+This diagram records the accepted boundary, not a completed native session implementation. The native login, MFA, refresh, logout, replay, revocation, and expiry contract must be implemented and verified through the Mobile 1.0 delivery backlog.
+
 Browser-facing auth requests should go through the Next.js BFF route handlers under `/api/auth/*`.
 
 The generated OpenAPI client can still be useful for non-auth backend resources, but browser auth flows should not call NestJS auth endpoints directly. Next.js needs to own the browser-facing HttpOnly cookies, refresh retries, local logout behavior, and same-origin checks.
 
 This split matters because cookies behave differently depending on whether the browser is talking to the Next.js app or directly to the backend API.
+
+The mobile app will call NestJS directly instead of using the Next.js BFF. It will use bearer access tokens, an explicit native refresh-token transport, secure operating-system storage for sensitive durable credentials, and in-memory access/session state. The backend must distinguish authentication mechanisms through explicit endpoint or transport contracts, never User-Agent or other incidental client headers. Browser BFF behavior remains unchanged.
 
 ## Main Backend Auth Components
 

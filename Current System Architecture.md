@@ -2,7 +2,7 @@
 
 Status: current-state architecture for the partially implemented application.
 
-This note explains how the current Eric's Barbers system is structured across the frontend, backend, database, and external services.
+This note explains how the current Eric's Barbers system is structured across its web client, mobile scaffold, backend, database, and external services. Planned mobile contracts are marked explicitly and are not presented as implemented.
 
 Related notes:
 
@@ -11,33 +11,39 @@ Related notes:
 - [[Database Design]]
 - [[Local Development Setup]]
 - [[Known Gaps and Roadmap]]
+- [[Shared Product Requirements]]
+- [[Web App Delivery Roadmap]]
+- [[Mobile App Requirements]]
+- [[Mobile App Delivery Roadmap]]
 
 ## System Context
 
-The project currently contains multiple app folders:
+The workspace contains four active, independently versioned repositories plus organization metadata:
 
-| Folder                   | Purpose                      | Current status                                |
-| ------------------------ | ---------------------------- | --------------------------------------------- |
-| `erics-barbers-ui`       | Main Next.js frontend        | Active frontend                               |
-| `erics-barber-api`       | NestJS backend API           | Active backend                                |
-| `erics-barbers-ui-react` | Older Vite React app         | Appears to be a starter or earlier experiment |
-| `Eric's Barbers`         | Obsidian documentation vault | Active documentation                          |
-
-The active application is the Next.js frontend plus the NestJS backend.
+| Repository | Purpose | Current status |
+| --- | --- | --- |
+| `erics-barbers-ui` | Next.js customer/staff web client and browser BFF | Active |
+| `erics-barber-api` | Shared NestJS API and canonical OpenAPI contract | Active |
+| `erics-barbers-app` | React Native and Expo customer application | Native scaffold exists; Mobile 1.0 features are being delivered |
+| `erics-barbers-docs` | Requirements, roadmaps, current-state notes, and ADRs | Active |
+| `.github` | GitHub organization profile metadata | Active |
 
 ```mermaid
 flowchart LR
-    User["User Browser"] --> Next["Next.js Frontend"]
+    Browser["Customer or staff browser"] --> Next["Next.js Frontend"]
     Next --> NextRoutes["Next.js API Routes"]
     NextRoutes --> API["NestJS API"]
+    Mobile["React Native customer app"] --> API
     API --> Prisma["Prisma ORM"]
     Prisma --> DB["PostgreSQL"]
     API --> Resend["Resend Email"]
 ```
 
-## Frontend Architecture
+The browser path is implemented. The mobile-to-API path is the accepted architecture; its native authentication transport and feature integrations remain delivery work.
 
-The frontend lives in:
+## Web Architecture
+
+The web client lives in:
 
 `erics-barbers-ui`
 
@@ -53,7 +59,7 @@ Main folders:
 | `api/generated/`  | Generated OpenAPI client code.                                              |
 | `test/`           | Frontend tests.                                                             |
 
-## Frontend Routing
+## Web Routing
 
 Important routes:
 
@@ -70,7 +76,7 @@ Important routes:
 | `/bookings/new-booking`    | `app/bookings/new-booking/page.tsx`    | Placeholder.                    |
 | `/bookings/manage-booking` | `app/bookings/manage-booking/page.tsx` | Placeholder.                    |
 
-## Frontend API Strategy
+## Web API Strategy
 
 Browser-facing authentication uses Next.js API routes as a BFF boundary.
 
@@ -99,6 +105,26 @@ Next.js route handlers can read and set HttpOnly cookies for the frontend domain
 Trade-off:
 
 The generated OpenAPI client remains available and can be useful for non-auth backend resources, but auth browser flows should continue to use the BFF routes because they involve cookie setting, refresh retry behavior, redirects, and local logout cleanup.
+
+## Mobile Architecture
+
+The native customer client lives in:
+
+`erics-barbers-app`
+
+The current repository contains an Expo Router scaffold, Expo application configuration, assets, and the mobile UX journey design. It targets iOS and Android with React Native and Expo.
+
+Accepted boundaries from [[ADR 0022 - Build A Customer Mobile App With React Native And Expo]]:
+
+- use Expo Continuous Native Generation;
+- keep generated `ios` and `android` projects out of source control initially;
+- express native behavior through Expo configuration and config plugins;
+- communicate directly with NestJS rather than the Next.js BFF;
+- limit Mobile 1.0 to customer and guest journeys;
+- use TanStack Query for server state, React/form state for transient state, SecureStore for sensitive durable credentials, and memory for the access token and active session; and
+- route relevant verification, reset, and booking links through universal/app links with web fallback.
+
+Native login, refresh, logout, secure-storage, and session-restoration behavior are not yet current-state capabilities. They must be implemented against an explicit native contract; the API must not infer client type from User-Agent or other incidental headers.
 
 ## Backend Architecture
 
@@ -150,6 +176,14 @@ flowchart TD
     AppModule --> ConfigModule
     AppModule --> ThrottlerModule
 ```
+
+## Shared API Contract
+
+The API repository owns `openapi/openapi.json` as the canonical client contract. Runtime Swagger UI and the committed document use the same NestJS document factory.
+
+The web repository consumes a synchronized copy at `api/api-spec.json`. The mobile repository will consume the same API-owned contract when generated mobile API integration is introduced. Neither client should independently hand-edit its copy.
+
+The API provides `npm run openapi:generate` and `npm run openapi:check`. A local pre-commit hook runs the check, while CI remains the authoritative shared enforcement point because local hooks can be skipped.
 
 ## Backend Layering Pattern
 
@@ -280,6 +314,7 @@ Current local runtime assumptions:
 | Next.js frontend | `3000`       |
 | NestJS backend   | `4000`       |
 | Swagger docs     | `4000/api`   |
+| Expo Metro       | `8081`       |
 
 ## Request Flow Example
 
@@ -309,8 +344,10 @@ sequenceDiagram
 - The codebase has a clear modular direction, but some modules are still placeholders.
 - The backend uses use cases, which improves readability, but some use cases are thin wrappers.
 - Browser-facing auth goes through Next.js BFF route handlers.
+- The native application will call NestJS directly through a separately defined token transport.
 - JWT access tokens are stored as HttpOnly cookies on the frontend domain, improving safety but increasing cookie-handling complexity.
 - Refresh tokens are stored as HttpOnly cookies on the frontend domain and as hashed sessions in PostgreSQL.
+- Web and mobile share business behavior and an API-owned OpenAPI contract, but maintain separate presentation and authentication-transport layers.
 - Booking and barber modules exist before the product flows are complete.
 
 ## Architecture Principles To Maintain
@@ -320,7 +357,9 @@ As the project grows, it should preserve these principles:
 1. Keep controllers thin.
 2. Put business workflows in use cases.
 3. Keep database access behind repositories or services.
-4. Keep frontend pages focused on user flows.
-5. Keep auth-sensitive cookie handling on the server side.
-6. Mark unfinished features clearly in both code and docs.
-7. Avoid duplicating domain rules between frontend and backend.
+4. Keep web pages and mobile screens focused on their user journeys.
+5. Keep browser auth-sensitive cookie handling in the Next.js BFF.
+6. Use explicit native authentication contracts and secure storage on mobile.
+7. Enforce shared business rules in NestJS rather than duplicating them across clients.
+8. Generate client contracts from the API-owned OpenAPI document.
+9. Mark unfinished features clearly in both code and docs.
