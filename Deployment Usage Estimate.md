@@ -10,6 +10,12 @@ This document establishes an initial workload estimate for comparing cloud deplo
 
 The estimate focuses on the Eric's Barbers system, but the calculation method can be reused for future projects.
 
+## Accepted Platform Direction
+
+Railway has been selected as the managed host for the NestJS API, PostgreSQL, and future backend cron or worker services. Vercel remains the Next.js frontend and browser-BFF host. The decision and its alternatives are recorded in [[ADR 0026 - Use Railway For Backend Hosting]].
+
+The target includes isolated Railway production and test environments. Production API and database services remain continuously available. The test API may use Railway Serverless sleeping after background traffic and database-connection behavior have been made compatible; the test database is initially treated as a persistent cost. Actual Railway usage must replace the estimates in this document after deployment.
+
 ## Baseline User Assumptions
 
 | Measure | Initial assumption |
@@ -279,9 +285,9 @@ The provider evaluation should separate:
 
 At portfolio scale, a fixed-price VPS can reduce per-service compute cost, while managed PostgreSQL can preserve database durability. The trade-off is a larger shared failure domain and more operational responsibility.
 
-## Initial Capacity Position
+## Accepted Capacity Position
 
-The initial workload does not require high compute capacity or request-scale infrastructure. A suitable starting plan should prioritise:
+The initial workload does not require high compute capacity or request-scale infrastructure. The Railway implementation should prioritise:
 
 1. durable PostgreSQL with backups and a documented restore path;
 2. enough memory for the always-on NestJS process and its scheduled jobs;
@@ -304,7 +310,7 @@ The following inputs are still needed before selecting providers and plans:
 - measured idle and peak memory for Next.js and NestJS;
 - desired backup frequency, retention and recovery-point objective;
 - desired recovery-time objective;
-- whether staging must be continuously available;
+- whether measured test-database cost justifies a later scale-to-zero alternative;
 - whether different client projects may share infrastructure; and
 - data residency or contractual requirements.
 

@@ -297,13 +297,13 @@ Files:
 - `src/infrastructure/outbox/email-outbox.processor.ts`
 - `src/modules/auth/infrastructure/prisma/auth.prisma-repository.ts`
 
-## Render
+## Deployment Platform
 
-The backend Swagger config references a deployed API URL:
+Railway is the accepted managed platform for the NestJS API, PostgreSQL, and future backend cron or worker services. Vercel remains the host for the Next.js frontend and browser BFF. This decision is recorded in [[ADR 0026 - Use Railway For Backend Hosting]].
 
-`https://erics-barber-api.onrender.com`
+The target Railway topology contains isolated production and test environments. Each environment has its own API deployment, PostgreSQL service, private network, variables, credentials, and data. Production remains continuously available. The test API may sleep when compatible, but its database remains an isolated persistent service unless a later accepted decision changes the test database provider.
 
-The repository also contains a `Procfile`, which suggests Render-style deployment support.
+The current backend repository still contains historical Render deployment configuration, including a `Procfile` and a Render URL in Swagger configuration. These are migration items and must not be treated as the target architecture. The production deployment is not considered restored until Railway configuration, data migration or retirement, health verification, backups, and rollback have been completed.
 
 ## Runtime Ports
 

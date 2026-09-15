@@ -1,6 +1,6 @@
 # ADR 0012 - Keep The NestJS API On An Always-On Backend Host
 
-Status: Accepted
+Status: Accepted; refined by [[ADR 0026 - Use Railway For Backend Hosting]]
 
 Date: 2026-07-01
 
@@ -27,7 +27,7 @@ Vercel remains the frontend/BFF hosting platform:
 
 ```text
 Next.js frontend and BFF routes -> Vercel
-NestJS API                      -> always-on backend host, such as Render
+NestJS API                      -> always-on Railway service
 PostgreSQL                      -> managed database
 ```
 
@@ -120,6 +120,8 @@ Negative consequences:
 - local and production environment documentation must stay accurate
 
 ## Follow-Up Work
+
+Railway was subsequently selected as the backend host in [[ADR 0026 - Use Railway For Backend Hosting]]. The runtime decision in this record remains current; provider selection and environment topology are now governed by ADR 0026.
 
 - document production deployment and environment variables
 - decide how notification jobs will run: scheduled API job, dedicated worker, or queue consumer

@@ -22,6 +22,8 @@ The project is partially built.
 
 Browser authentication is the most mature end-to-end capability. Customer booking creation and management have substantial web and API foundations, but need consistent polish and stronger end-to-end verification. The React Native repository is currently an Expo scaffold: Mobile 1.0 requirements, UX, architecture, roadmap, and tickets exist, while product feature implementation remains early. Staff pages are web interface foundations backed mainly by sample data. Payments, push notifications, and administrative workflows are not complete product capabilities.
 
+Railway is the accepted target for the NestJS API, PostgreSQL, and future backend services, with isolated production and test environments. Migration from the historical Render deployment, production restoration, backup/restore verification, observability, and the operational runbook remain active delivery work under [[ADR 0026 - Use Railway For Backend Hosting]].
+
 ## Implemented
 
 ## Authentication
@@ -237,7 +239,7 @@ Useful docs to add next:
 - `Booking Flow - Planned.md`
 - `Barber Dashboard - Planned.md`
 - `Testing Strategy.md`
-- `Deployment Guide.md`
+- `Deployment Guide.md` — tracked by the Railway deployment, recovery, and cutover ticket
 
 ## Guiding Principle
 

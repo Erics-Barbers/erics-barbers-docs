@@ -68,6 +68,8 @@ The app will call NestJS directly. Native authentication will use an intentional
 
 `erics-barber-api` uses NestJS 11, Prisma 7, PostgreSQL, JWT authentication, bcrypt, Resend, Swagger/OpenAPI, Jest, and Supertest.
 
+Railway is the accepted managed host for the NestJS API, PostgreSQL, and future backend cron or worker services. Production and test backend resources are isolated in separate Railway environments; Vercel remains responsible for the Next.js frontend and browser BFF. See [[ADR 0026 - Use Railway For Backend Hosting]].
+
 The API repository owns the canonical generated `openapi/openapi.json`. Web and mobile client code must be generated from synchronized copies of that artifact rather than separately maintained contracts.
 
 ## High-Level Architecture

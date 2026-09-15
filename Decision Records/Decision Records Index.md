@@ -41,6 +41,7 @@ These records are not meant to be perfect or permanent. They document the reason
 | [[ADR 0023 - Snapshot Accepted Service Terms On Bookings]] | Preserve the service name, duration, and price accepted for each booking independently of later catalogue changes. | Accepted |
 | [[ADR 0024 - Make Booking Creation Idempotent]] | Use client-generated idempotency keys and database-backed replay semantics for booking creation. | Accepted |
 | [[ADR 0025 - Establish The NestJS OpenAPI Document As The Canonical Client Contract]] | Generate and commit one deterministic API-owned OpenAPI document for web and mobile clients. | Accepted |
+| [[ADR 0026 - Use Railway For Backend Hosting]] | Host the NestJS API, PostgreSQL, and future backend services on Railway with isolated production and test environments. | Accepted |
 
 ## Suggested Future Records
 
