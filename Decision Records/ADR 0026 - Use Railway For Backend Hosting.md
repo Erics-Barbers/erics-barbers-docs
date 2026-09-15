@@ -163,7 +163,7 @@ Reasons not selected:
 
 ## Follow-Up Work
 
-- recover or formally retire any data remaining in the expired Render database;
+- formally retire the expired Render database; recovery is not required for the current restoration work;
 - create Railway production and isolated test environments;
 - configure production and test domains, secrets, and private database connections;
 - define the database migration and application deployment order;

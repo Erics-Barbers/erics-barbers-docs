@@ -299,11 +299,10 @@ The initial workload does not require high compute capacity or request-scale inf
 
 ## Open Inputs
 
-The following inputs are still needed before selecting providers and plans:
+The following inputs are still needed to finalise production operations and revise the estimate:
 
 - acceptable monthly budget for the current project and the wider portfolio;
 - target production availability and acceptable maintenance downtime;
-- whether the existing Render database must be recovered;
 - expected number of bookings, logins, MFA attempts and emails per day;
 - expected split between browser and mobile users;
 - measured average and high-percentile API response size;

@@ -303,7 +303,9 @@ Railway is the accepted managed platform for the NestJS API, PostgreSQL, and fut
 
 The target Railway topology contains isolated production and test environments. Each environment has its own API deployment, PostgreSQL service, private network, variables, credentials, and data. Production remains continuously available. The test API may sleep when compatible, but its database remains an isolated persistent service unless a later accepted decision changes the test database provider.
 
-The current backend repository still contains historical Render deployment configuration, including a `Procfile` and a Render URL in Swagger configuration. These are migration items and must not be treated as the target architecture. The production deployment is not considered restored until Railway configuration, data migration or retirement, health verification, backups, and rollback have been completed.
+Render is now historical only. The old Render database does not need to be recovered for the current restoration work, and new backend deployment work targets Railway. Any remaining Render-specific URLs, startup assumptions, or deployment notes should be removed or clearly marked as historical evidence rather than target architecture. The production deployment is not considered fully restored until Railway health verification, backups, restore/export evidence, observability, and rollback procedures have been completed.
+
+Operational deployment steps and evidence are tracked in [[Deployment Guide]].
 
 ## Runtime Ports
 
