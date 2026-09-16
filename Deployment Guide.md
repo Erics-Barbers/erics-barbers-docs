@@ -105,19 +105,39 @@ Current confirmed observability:
 - Vercel deployment logs are visible.
 - Railway deployment and runtime logs are visible.
 - Railway service and database metrics are visible.
+- production `/health/ready` is configured for the API health check.
 
 Remaining production observability decisions:
 
 - choose and configure application-level error monitoring;
-- decide whether production error alerts should be delivered by email;
-- define alert thresholds and recipients without recording secret values;
-- record uptime alert configuration for production `/health/ready`; and
-- record backup, export, and restore evidence.
+- decide whether production error alerts should be delivered by email; and
+- define alert thresholds and recipients without recording secret values.
+
+## Verification Status
+
+Completed:
+
+- Production and test Railway API deployments build and deploy from Git.
+- Production and test PostgreSQL services, variables, credentials, and data are isolated.
+- API services use their environment-specific private Railway database connection.
+- Production remains continuously available.
+- Test API sleeping behaviour is accepted by leaving automated test health checks disabled.
+- Test data is synthetic and cannot mutate production services.
+- Production readiness checks use side-effect-free `/health/ready`.
+- Background-job behaviour is explicitly configured per environment.
+- Prisma migrations run through the Railway pre-deploy command.
+- Vercel, Railway API, and Railway database logs or metrics are visible.
+- Render is historical and the old Render database does not need recovery.
+
+Remaining:
+
+- Complete backup, export, restore, retention, and recovery evidence.
+- Configure production application error monitoring and email alerts.
+- Manually retire or disable any remaining Render services if they still exist outside the target architecture.
 
 ## Open Verification
 
-- Verify production and test use isolated Railway PostgreSQL databases and environment-scoped credentials.
-- Verify production API uses the private Railway database URL.
-- Confirm test API sleeping behaviour is acceptable with automated health checks disabled.
-- Verify Railway backup, export, restore, retention, and recovery behaviour.
-- Record deployment, rollback, and restore evidence before closing the platform tickets.
+- Record the first successful R2 backup object path without storing credentials.
+- Restore one backup into a disposable database and record the result.
+- Record the production error-monitoring and alerting choice.
+- Record Render shutdown evidence if any old Render services remain active.
