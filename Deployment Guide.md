@@ -106,12 +106,21 @@ Current confirmed observability:
 - Railway deployment and runtime logs are visible.
 - Railway service and database metrics are visible.
 - production `/health/ready` is configured for the API health check.
+- Sentry is the chosen application-level error monitoring provider for production API and web exceptions.
 
 Remaining production observability decisions:
 
-- choose and configure application-level error monitoring;
-- decide whether production error alerts should be delivered by email; and
+- create the Sentry projects and alert rules;
+- configure production and test Sentry environment variables in Railway and Vercel; and
 - define alert thresholds and recipients without recording secret values.
+
+Sentry configuration values:
+
+- API on Railway: `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, and optionally `SENTRY_TRACES_SAMPLE_RATE`.
+- Web on Vercel: `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `NEXT_PUBLIC_SENTRY_RELEASE`, and optionally `SENTRY_TRACES_SAMPLE_RATE` / `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`.
+- Web source-map uploads on Vercel: `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN`.
+
+Do not commit DSNs, auth tokens, or alert-recipient email addresses to the repositories.
 
 ## Verification Status
 
@@ -129,10 +138,11 @@ Completed:
 - R2 database backups can be created from the Railway backup service.
 - A backup can be restored from R2 through the manual restore service.
 - Vercel, Railway API, and Railway database logs or metrics are visible.
+- Sentry SDK wiring exists in the API and web application codebases.
 
 Remaining:
 
-- Configure production application error monitoring and email alerts.
+- Create Sentry projects, set environment variables, and configure production alert routing.
 
 ## Open Verification
 
