@@ -30,11 +30,11 @@ Railway test environment
 
 The production API remains continuously available. The test API is allowed to sleep, so no automated test health check is configured by default. Manual test health checks can still be called when needed.
 
-## Render Retirement
+## Legacy Deployment Retirement
 
-The historical Render API and PostgreSQL deployment is retired as a target architecture. The old Render database does not need to be recovered for the current restoration work.
+The historical API and PostgreSQL deployment is retired as a target architecture. The old database does not need to be recovered for the current restoration work.
 
-Render-specific URLs, deployment assumptions, and configuration should be treated as historical evidence only. New deployment work targets Railway for backend services and Vercel for the web frontend and BFF.
+Legacy provider URLs, deployment assumptions, and configuration should be treated as historical evidence only. New deployment work targets Railway for backend services and Vercel for the web frontend and BFF.
 
 ## API Build And Deployment Commands
 
@@ -126,18 +126,14 @@ Completed:
 - Production readiness checks use side-effect-free `/health/ready`.
 - Background-job behaviour is explicitly configured per environment.
 - Prisma migrations run through the Railway pre-deploy command.
+- R2 database backups can be created from the Railway backup service.
+- A backup can be restored from R2 through the manual restore service.
 - Vercel, Railway API, and Railway database logs or metrics are visible.
-- Render is historical and the old Render database does not need recovery.
 
 Remaining:
 
-- Complete backup, export, restore, retention, and recovery evidence.
 - Configure production application error monitoring and email alerts.
-- Manually retire or disable any remaining Render services if they still exist outside the target architecture.
 
 ## Open Verification
 
-- Record the first successful R2 backup object path without storing credentials.
-- Restore one backup into a disposable database and record the result.
 - Record the production error-monitoring and alerting choice.
-- Record Render shutdown evidence if any old Render services remain active.
