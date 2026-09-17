@@ -126,6 +126,12 @@ Sentry configuration values:
 
 Do not commit DSNs, auth tokens, or alert-recipient email addresses to the repositories.
 
+Temporary web diagnostics can be enabled in Vercel with
+`SENTRY_DEBUG_ENABLED=true`. Visit `/debug-sentry` to trigger separate browser
+and Next.js server errors, then confirm both events and their source-mapped stack
+traces in Sentry. Remove the variable after verification; the page and its API
+route return `404` while the flag is disabled.
+
 ## Verification Status
 
 Completed:
