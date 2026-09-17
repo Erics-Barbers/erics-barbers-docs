@@ -68,7 +68,11 @@ Production health check:
 GET /health/ready
 ```
 
-This verifies that the API process can reach PostgreSQL without sending email.
+This verifies that the API process can reach PostgreSQL and, when configured,
+that the Sentry SDK is initialized. Production readiness fails when
+`SENTRY_ENVIRONMENT=production` but `SENTRY_DSN` is missing. Outside production,
+an omitted DSN is treated as Sentry being intentionally disabled. The check does
+not send email or emit a synthetic Sentry event.
 
 Test health checks are not automated while the test API is intended to sleep. Manual checks remain available:
 
