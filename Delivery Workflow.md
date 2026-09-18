@@ -2,7 +2,7 @@
 
 Status: accepted working agreement
 
-Version: 1.1
+Version: 1.2
 
 Recorded: 12 August 2026
 
@@ -16,7 +16,7 @@ Requirements, roadmaps, current-state documents, and ADRs remain the durable pro
 
 - Organization: `Erics-Barbers`
 - Mobile Project: private [Erics Barbers - Mobile App Delivery](https://github.com/orgs/Erics-Barbers/projects/1)
-- Web Project: `Erics Barbers - Web App Delivery` (creation pending GitHub Project token permission)
+- Web Project: private [Erics Barbers - Web App Delivery](https://github.com/orgs/Erics-Barbers/projects/2)
 - Issues live in the repository that owns the change.
 - Cross-repository delivery is aggregated in the relevant organization Project and umbrella issue.
 - The Mobile 1.0 baseline is catalogued in [[Mobile App Delivery Backlog]].
@@ -133,5 +133,6 @@ The ticket catalogue may be refined as implementation reveals better boundaries.
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.2 | 18 September 2026 | Added the live web delivery Project and generalized fields for mobile increments and web releases. |
 | 1.1 | 12 August 2026 | Added the live GitHub Project and aligned field guidance with the Project's available Priority and Effort fields. |
 | 1.0 | 12 August 2026 | Established the assistant-managed GitHub Issues and Projects workflow. |

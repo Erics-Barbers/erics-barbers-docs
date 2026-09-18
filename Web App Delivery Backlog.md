@@ -2,7 +2,7 @@
 
 Status: accepted web execution baseline
 
-Version: 1.0
+Version: 1.1
 
 Recorded: 18 September 2026
 
@@ -91,10 +91,12 @@ Web 3.0 implementation tickets should be created only after W3-1 establishes the
 - All catalogue items are published in their owning repositories.
 - The [web delivery umbrella issue](https://github.com/Erics-Barbers/erics-barbers-docs/issues/6) aggregates release completion.
 - Completed deployment issues were closed during reconciliation so they no longer appear as outstanding work.
-- The `Erics Barbers - Web App Delivery` organization Project remains to be created and populated. The available GitHub token requires `read:org`, `read:project`, and `project` scopes before Project automation can complete.
+- The private [Erics Barbers - Web App Delivery Project](https://github.com/orgs/Erics-Barbers/projects/2) contains all 15 umbrella and catalogue issues.
+- Project fields record `Status`, `Release`, `Priority`, and `Effort`; initial values reflect the dependencies and recommended starting sequence in this catalogue.
 
 ## Version History
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.1 | 18 September 2026 | Recorded the populated organization Project and its delivery metadata. |
 | 1.0 | 18 September 2026 | Created the web backlog catalogue, mapped existing issues to releases, added a Web 2.0 API ticket, and published the umbrella issue. |

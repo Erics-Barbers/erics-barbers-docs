@@ -2,7 +2,7 @@
 
 Status: active planning baseline
 
-Version: 1.1
+Version: 1.2
 
 Recorded: 12 August 2026
 
@@ -29,6 +29,7 @@ Related documents:
 - [[Known Gaps and Roadmap]]
 - [[Roles and Permissions]]
 - [[Authentication Flows]]
+- [GitHub Web App Delivery Project](https://github.com/orgs/Erics-Barbers/projects/2)
 - [GitHub web delivery umbrella issue](https://github.com/Erics-Barbers/erics-barbers-docs/issues/6)
 
 ## Status Model
@@ -299,5 +300,6 @@ When scope changes:
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.2 | 18 September 2026 | Linked the roadmap to the populated organization web delivery Project. |
 | 1.1 | 18 September 2026 | Linked the roadmap to the web execution backlog and cross-repository umbrella issue. |
 | 1.0 | 12 August 2026 | Replaced sequential phases with outcome-based web releases and continuous engineering workstreams. |
