@@ -15,10 +15,12 @@ Requirements, roadmaps, current-state documents, and ADRs remain the durable pro
 ## GitHub Structure
 
 - Organization: `Erics-Barbers`
-- Project: private [Erics Barbers — Mobile App Delivery](https://github.com/orgs/Erics-Barbers/projects/1)
+- Mobile Project: private [Erics Barbers - Mobile App Delivery](https://github.com/orgs/Erics-Barbers/projects/1)
+- Web Project: `Erics Barbers - Web App Delivery` (creation pending GitHub Project token permission)
 - Issues live in the repository that owns the change.
-- Cross-repository delivery is aggregated in the organization Project.
+- Cross-repository delivery is aggregated in the relevant organization Project and umbrella issue.
 - The Mobile 1.0 baseline is catalogued in [[Mobile App Delivery Backlog]].
+- The web release baseline is catalogued in [[Web App Delivery Backlog]] and aggregated in the [web delivery umbrella issue](https://github.com/Erics-Barbers/erics-barbers-docs/issues/6).
 
 Repository ownership follows these boundaries:
 
@@ -36,7 +38,7 @@ The Project should expose:
 | Field | Values or purpose |
 | --- | --- |
 | Status | `Backlog`, `Ready`, `In progress`, `Blocked`, `Review / verify`, `Done` |
-| Increment | Encoded by the `[A]`–`[F]` title prefix and stable backlog ID so it remains visible across repositories. |
+| Increment / Release | Mobile uses `[A]`-`[F]`; web uses `Web 0.x`-`Web 3.0`; stable catalogue IDs preserve identity across repositories. |
 | Priority | GitHub's `Urgent`, `High`, `Medium`, and `Low`; catalogue priorities map as `P0` → `Urgent`, `P1` → `High`, and `P2` → `Medium`. |
 | Effort | GitHub's `Low`, `Medium`, and `High`; catalogue sizes map as `S` → `Low`, `M` → `Medium`, and `L` → `High`. |
 
