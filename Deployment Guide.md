@@ -110,13 +110,11 @@ Current confirmed observability:
 - Railway deployment and runtime logs are visible.
 - Railway service and database metrics are visible.
 - production `/health/ready` is configured for the API health check.
-- Sentry is the chosen application-level error monitoring provider for production API and web exceptions.
-
-Remaining production observability decisions:
-
-- create the Sentry projects and alert rules;
-- configure production and test Sentry environment variables in Railway and Vercel; and
-- define alert thresholds and recipients without recording secret values.
+- Sentry monitors production API and web exceptions and sends email alerts to the production alert mailbox.
+- Vercel and Railway deployment notifications are enabled and verified.
+- Sentry source maps have been verified against production web errors, including original TypeScript stack frames.
+- Sentry continuously monitors `https://api.erics-barbers-luton.co.uk/health/ready` and sends failure and recovery notifications.
+- Automated uptime monitoring remains disabled for test so that the test API can sleep.
 
 Sentry configuration values:
 
@@ -148,12 +146,10 @@ Completed:
 - R2 database backups can be created from the Railway backup service.
 - A backup can be restored from R2 through the manual restore service.
 - Vercel, Railway API, and Railway database logs or metrics are visible.
-- Sentry SDK wiring exists in the API and web application codebases.
-
-Remaining:
-
-- Create Sentry projects, set environment variables, and configure production alert routing.
+- Sentry SDK wiring, production alert routing, and web source maps are verified.
+- Vercel and Railway deployment-failure notifications are verified.
+- Production uptime failure and recovery notifications are verified against the custom API domain.
 
 ## Open Verification
 
-- Record the production error-monitoring and alerting choice.
+No deployment verification items remain open.
