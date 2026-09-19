@@ -19,6 +19,7 @@ Shared business rules are client-neutral. Web and mobile requirements capture pr
 - [Authentication Flows](Authentication%20Flows.md)
 - [Roles and Permissions](Roles%20and%20Permissions.md)
 - [Local Development Setup](Local%20Development%20Setup.md)
+- [DNS Inventory](DNS%20Inventory.md)
 - [Known Gaps and Roadmap](Known%20Gaps%20and%20Roadmap.md)
 - [Deployment Usage Estimate](Deployment%20Usage%20Estimate.md)
 - [Decision Records](Decision%20Records/Decision%20Records%20Index.md)
